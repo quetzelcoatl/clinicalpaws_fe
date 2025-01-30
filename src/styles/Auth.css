@@ -1,0 +1,80 @@
+/* src/styles/Auth.css */
+
+/* The grey background to fill the screen and center content */
+.auth-container {
+  background-color: #f9fafb; /* a very light grey */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Helvetica", "Arial", sans-serif;
+}
+
+/* The white "card" box */
+.auth-card {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 350px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* The main heading inside the card */
+.auth-title {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* Each input field */
+.auth-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db; /* light grey border */
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* The primary button (e.g. green or teal) */
+.auth-button {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: none;
+  background-color: #099e6b; /* your desired green */
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.auth-button:hover {
+  background-color: #088e61;
+  transform: translateY(-2px);
+}
+.auth-button:active {
+  transform: translateY(0);
+}
+
+/* Links below the button, smaller text */
+.auth-footer-text {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.auth-footer-link {
+  color: #099e6b;
+  text-decoration: none;
+  font-weight: 500;
+}
+.auth-footer-link:hover {
+  text-decoration: underline;
+}
+
+/* Error message styling */
+.auth-error {
+  color: #f43f5e; /* a red/pink shade */
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}

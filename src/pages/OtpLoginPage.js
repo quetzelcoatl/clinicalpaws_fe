@@ -1,73 +1,97 @@
+// src/pages/OtpLoginPage.js
 import React, { useState } from "react";
 import AuthService from "../services/AuthService";
-import { Form, Button, Alert } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+
+import "../styles/Auth.css";
 
 function OtpLoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [alert, setAlert] = useState({ variant: "", message: "" });
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
 
+  // 1) Send OTP to user’s email
   const handleSendOtp = async (e) => {
     e.preventDefault();
+    setError("");
     try {
-      const res = await AuthService.loginWithOtp(email);
-      setAlert({ variant: "success", message: res.message });
+      // POST to /api/signup/login with { email }
+      await AuthService.loginWithOtp(email);
       setOtpSent(true);
     } catch (err) {
-      setAlert({ variant: "danger", message: err.message });
+      setError(err.message);
     }
   };
 
+  // 2) Verify the user’s OTP
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    setError("");
     try {
+      // POST to /api/signup/otp/verify_otp with { email, otp, purpose="login" }
       const res = await AuthService.verifyOtp(email, Number(otp), "login");
-      setAlert({ variant: "success", message: res.message });
-      localStorage.setItem("accessToken", res.data.access_token);
-      localStorage.setItem("refreshToken", res.data.refresh_token);
-      // Possibly redirect to profile
+
+      // Store tokens in cookies
+      const { access_token, refresh_token } = res.data;
+
+      Cookies.set("accessToken", access_token, {
+        path: "/",
+        secure: true,
+        sameSite: "strict",
+      });
+
+      Cookies.set("refreshToken", refresh_token, {
+        expires: 30, // 30 days
+        path: "/",
+        secure: true,
+        sameSite: "strict",
+      });
+
+      navigate("/profile");
     } catch (err) {
-      setAlert({ variant: "danger", message: err.message });
+      setError(err.message);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "auto" }}>
-      <h3>OTP Login</h3>
-      {alert.message && <Alert variant={alert.variant}>{alert.message}</Alert>}
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2 className="auth-title">Login via OTP</h2>
+        {error && <div className="auth-error">{error}</div>}
 
-      {!otpSent && (
-        <Form onSubmit={handleSendOtp}>
-          <Form.Group className="mb-3">
-            <Form.Label>Email</Form.Label>
-            <Form.Control 
+        {!otpSent ? (
+          <form onSubmit={handleSendOtp}>
+            <input
               type="email"
-              placeholder="name@example.com"
+              className="auth-input"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required 
+              required
             />
-          </Form.Group>
-          <Button variant="primary" type="submit">Send OTP</Button>
-        </Form>
-      )}
-
-      {otpSent && (
-        <Form onSubmit={handleVerifyOtp}>
-          <Form.Group className="mb-3">
-            <Form.Label>OTP</Form.Label>
-            <Form.Control 
+            <button type="submit" className="auth-button">
+              Send OTP
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp}>
+            <input
               type="number"
-              placeholder="123456"
+              className="auth-input"
+              placeholder="OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              required 
+              required
             />
-          </Form.Group>
-          <Button variant="primary" type="submit">Verify OTP</Button>
-        </Form>
-      )}
+            <button type="submit" className="auth-button">
+              Verify OTP
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,63 @@
+/* src/pages/LoginPage.css */
+.login-container {
+  background-color: #000;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box {
+  background: #161616;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 350px;
+  color: #fff;
+}
+
+.login-box h2 {
+  margin-bottom: 1.5rem;
+}
+
+.form-control {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 25px;
+  background-color: #007aff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.login-btn:hover {
+  transform: translateY(-2px);
+}
+.login-btn:active {
+  transform: translateY(0);
+}
+
+.otp-login-link {
+  display: block;
+  margin-top: 1rem;
+  text-align: center;
+  color: #0dcaf0;
+  text-decoration: underline;
+}
+.otp-login-link:hover {
+  text-decoration: none;
+}
+
+.error-text {
+  color: #ff8686;
+  margin-bottom: 1rem;
+}

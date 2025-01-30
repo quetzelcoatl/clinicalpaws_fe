@@ -1,63 +1,73 @@
+// src/pages/SignupPage.js
 import React, { useState } from "react";
 import AuthService from "../services/AuthService";
-import { Form, Button, Alert } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
 
 function SignupPage() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [alert, setAlert] = useState({ variant: "", message: "" });
+  const [error, setError] = useState("");
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    setError("");
+
     try {
       const res = await AuthService.newSignupEmail(name, email, password);
-      setAlert({ variant: "success", message: res.message });
-      // Possibly navigate to /verify-otp or prompt user to enter OTP
+      // Possibly navigate to verify-otp:
+      navigate("/verify-otp");
     } catch (err) {
-      setAlert({ variant: "danger", message: err.message });
+      setError(err.message);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "auto" }}>
-      <h3 className="mb-3">Sign Up</h3>
-      {alert.message && (
-        <Alert variant={alert.variant}>{alert.message}</Alert>
-      )}
-      <Form onSubmit={handleSignup}>
-        <Form.Group className="mb-3">
-          <Form.Label>Name</Form.Label>
-          <Form.Control 
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2 className="auth-title">Create account</h2>
+        <form onSubmit={handleSignup}>
+          {error && <div className="auth-error">{error}</div>}
+
+          <input
             type="text"
-            placeholder="Jane Doe"
+            className="auth-input"
+            placeholder="Full name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            required 
+            required
           />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Email address</Form.Label>
-          <Form.Control 
+
+          <input
             type="email"
-            placeholder="name@example.com"
+            className="auth-input"
+            placeholder="Email address*"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required 
+            required
           />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Password</Form.Label>
-          <Form.Control 
+
+          <input
             type="password"
-            placeholder="Enter password"
+            className="auth-input"
+            placeholder="Create password*"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required 
+            required
           />
-        </Form.Group>
-        <Button variant="primary" type="submit">Sign Up</Button>
-      </Form>
+
+          <button type="submit" className="auth-button">
+            Sign Up
+          </button>
+        </form>
+        <div className="auth-footer-text">
+          Already have an account?{" "}
+          <Link to="/login" className="auth-footer-link">
+            Login
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,29 +1,27 @@
+// src/App.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import Layout from "./components/Layout";
-import SignupPage from "./pages/SignupPage";
-import VerifyOtpPage from "./pages/VerifyOtpPage";
+// Pages
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import OtpLoginPage from "./pages/OtpLoginPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import SetNewPasswordPage from "./pages/SetNewPasswordPage";
-import ProfilePage from "./pages/ProfilePage";
+import "./styles/Auth.css";
+// ... plus other pages if needed
 
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<SignupPage />} />
-          <Route path="/verify-otp" element={<VerifyOtpPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/otp-login" element={<OtpLoginPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/set-new-password" element={<SetNewPasswordPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Show the brand-new landing page at the root path */}
+        <Route path="/" element={<LandingPage />} />
+
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/otp-login" element={<OtpLoginPage />} />
+        {/* ... other routes as needed */}
+      </Routes>
     </Router>
   );
 }

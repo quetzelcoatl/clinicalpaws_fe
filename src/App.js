@@ -7,6 +7,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import OtpLoginPage from "./pages/OtpLoginPage";
+import AudioRecorderPage from "./pages/AudioRecorderPage";
 import "./styles/Auth.css";
 // ... plus other pages if needed
 

@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import AuthService from "../services/AuthService";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-
 import "../styles/Auth.css";
 
 function OtpLoginPage() {
@@ -13,12 +12,10 @@ function OtpLoginPage() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
 
-  // 1) Send OTP to user’s email
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      // POST to /api/signup/login with { email }
       await AuthService.loginWithOtp(email);
       setOtpSent(true);
     } catch (err) {
@@ -26,31 +23,19 @@ function OtpLoginPage() {
     }
   };
 
-  // 2) Verify the user’s OTP
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      // POST to /api/signup/otp/verify_otp with { email, otp, purpose="login" }
       const res = await AuthService.verifyOtp(email, Number(otp), "login");
-
-      // Store tokens in cookies
       const { access_token, refresh_token } = res.data;
 
-      Cookies.set("accessToken", access_token, {
-        path: "/",
-        secure: true,
-        sameSite: "strict",
-      });
+      // Store tokens in cookies
+      Cookies.set("accessToken", access_token, { path: "/", secure: false });
+      Cookies.set("refreshToken", refresh_token, { path: "/", secure: false });
 
-      Cookies.set("refreshToken", refresh_token, {
-        expires: 30, // 30 days
-        path: "/",
-        secure: true,
-        sameSite: "strict",
-      });
-
-      navigate("/profile");
+      // **Redirect** to the new audio page
+      navigate("/record-audio");
     } catch (err) {
       setError(err.message);
     }

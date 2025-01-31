@@ -1,8 +1,7 @@
 // frontend/src/services/AuthService.js
 
 // Points to your backend’s FastAPI routes.
-// Adjust if your API is located elsewhere or uses a different path.
-const BASE_URL = "http://127.0.0.1:8000/api/signup";
+const BASE_URL = "https://clinicalpaws.com/api/signup";
 
 /**
  * handleResponse:
@@ -29,15 +28,14 @@ const AuthService = {
   /**
    * 1) new_signup_email
    *    Endpoint: POST /api/signup/new_signup_email
-   *    Body: { name, email, password }
+   *    Expects query parameters: name, email, password
    */
   newSignupEmail: async (name, email, password) => {
-    const response = await fetch(`${BASE_URL}/new_signup_email`, {
+    const url = `${BASE_URL}/new_signup_email?name=${encodeURIComponent(
+      name
+    )}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, password }),
     });
     return handleResponse(response);
   },
@@ -45,15 +43,12 @@ const AuthService = {
   /**
    * 2) resend_otp
    *    Endpoint: POST /api/signup/otp/resend_otp
-   *    Body: { email }
+   *    Expects query parameter: email
    */
   resendOtp: async (email) => {
-    const response = await fetch(`${BASE_URL}/otp/resend_otp`, {
+    const url = `${BASE_URL}/otp/resend_otp?email=${encodeURIComponent(email)}`;
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
     });
     return handleResponse(response);
   },
@@ -61,16 +56,14 @@ const AuthService = {
   /**
    * 3) verify_otp
    *    Endpoint: POST /api/signup/otp/verify_otp
-   *    Body: { email, otp, purpose? }
-   *    purpose can be "signup" or "login". Default "signup".
+   *    Expects query parameters: email, otp, purpose (e.g., "signup" or "login")
    */
   verifyOtp: async (email, otp, purpose = "signup") => {
-    const response = await fetch(`${BASE_URL}/otp/verify_otp`, {
+    const url = `${BASE_URL}/otp/verify_otp?email=${encodeURIComponent(
+      email
+    )}&otp=${encodeURIComponent(otp)}&purpose=${encodeURIComponent(purpose)}`;
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, otp, purpose }),
     });
     return handleResponse(response);
   },
@@ -78,16 +71,14 @@ const AuthService = {
   /**
    * 4) verify_password
    *    Endpoint: POST /api/signup/verify_password
-   *    Body: { email, password }
-   *    Returns access & refresh tokens if password is correct.
+   *    Expects query parameters: email, password
    */
   verifyPassword: async (email, password) => {
-    const response = await fetch(`${BASE_URL}/verify_password`, {
+    const url = `${BASE_URL}/verify_password?email=${encodeURIComponent(
+      email
+    )}&password=${encodeURIComponent(password)}`;
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
     });
     return handleResponse(response);
   },
@@ -95,35 +86,31 @@ const AuthService = {
   /**
    * 5) login_with_otp
    *    Endpoint: POST /api/signup/login
-   *    Body: { email }
-   *    Requests an OTP to be sent for a user-based login flow.
+   *    Expects query parameter: email
    */
   loginWithOtp: async (email) => {
-    const response = await fetch(
-        `${BASE_URL}/login?email=${encodeURIComponent(email)}`,
-        {
-            method: "POST",
-        }
-    );
+    const url = `${BASE_URL}/login?email=${encodeURIComponent(email)}`;
+    const response = await fetch(url, {
+      method: "POST",
+    });
     return handleResponse(response);
   },
-
 
   /**
    * 6) get_access_token_from_refresh
    *    Endpoint: POST /api/signup/get_access_token_from_refresh
-   *    Body: { email }
-   *    Refresh token must also be in the header.
+   *    Expects query parameter: email
+   *    The refresh token is sent via the Authorization header.
    */
   getAccessTokenFromRefresh: async (email, refreshToken) => {
-    const response = await fetch(`${BASE_URL}/get_access_token_from_refresh`, {
+    const url = `${BASE_URL}/get_access_token_from_refresh?email=${encodeURIComponent(
+      email
+    )}`;
+    const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        // Typically "Authorization: Bearer <refresh-token>"
         Authorization: `Bearer ${refreshToken}`,
       },
-      body: JSON.stringify({ email }),
     });
     return handleResponse(response);
   },
@@ -134,10 +121,10 @@ const AuthService = {
    *    Requires a valid access token in the "token" header.
    */
   fetchUserDetails: async (accessToken) => {
-    const response = await fetch(`${BASE_URL}/fetch_user_details`, {
+    const url = `${BASE_URL}/fetch_user_details`;
+    const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
         token: accessToken, // as required by the backend
       },
     });
@@ -147,15 +134,12 @@ const AuthService = {
   /**
    * 8) reset_password_link
    *    Endpoint: POST /api/signup/reset_password_link
-   *    Body: { email }
+   *    Expects query parameter: email
    */
   resetPasswordLink: async (email) => {
-    const response = await fetch(`${BASE_URL}/reset_password_link`, {
+    const url = `${BASE_URL}/reset_password_link?email=${encodeURIComponent(email)}`;
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
     });
     return handleResponse(response);
   },
@@ -163,15 +147,14 @@ const AuthService = {
   /**
    * 9) set_password
    *    Endpoint: POST /api/signup/set_password
-   *    Body: { email, reset_id, new_password }
+   *    Expects query parameters: email, reset_id, new_password
    */
   setPassword: async (email, reset_id, new_password) => {
-    const response = await fetch(`${BASE_URL}/set_password`, {
+    const url = `${BASE_URL}/set_password?email=${encodeURIComponent(
+      email
+    )}&reset_id=${encodeURIComponent(reset_id)}&new_password=${encodeURIComponent(new_password)}`;
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, reset_id, new_password }),
     });
     return handleResponse(response);
   },

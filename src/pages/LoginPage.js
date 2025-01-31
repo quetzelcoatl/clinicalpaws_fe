@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import AuthService from "../services/AuthService";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-
-import "../styles/Auth.css"; // or wherever your CSS resides
+import "../styles/Auth.css";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -17,43 +16,15 @@ function LoginPage() {
     setError("");
 
     try {
-      // POST to /api/signup/verify_password
       const res = await AuthService.verifyPassword(email, password);
-
-      // res.data should look like:
-      // {
-      //   "access_token": "...",
-      //   "refresh_token": "...",
-      //   "token_type": "bearer",
-      //   "email": "user@example.com",
-      //   ...
-      // }
-
       const { access_token, refresh_token } = res.data;
 
-      // EXAMPLE: Store tokens in cookies with secure & sameSite attributes
-      Cookies.set("accessToken", access_token, {
-        // expires sets # days or a Date; e.g., expires: 1 => 1 day
-        // For short-living access tokens, e.g. 15 minutes, pass a date or just omit for session cookie
-        // expires: 1, // 1 day
-        path: "/",
-        secure: true,    // requires HTTPS in production
-        sameSite: "strict",
-      });
+      // Store tokens in cookies
+      Cookies.set("accessToken", access_token, { path: "/", secure: false });
+      Cookies.set("refreshToken", refresh_token, { path: "/", secure: false });
 
-      Cookies.set("refreshToken", refresh_token, {
-        // e.g., a longer expiry for refresh token
-        expires: 30, // 30 days
-        path: "/",
-        secure: true,
-        sameSite: "strict",
-      });
-
-      // Optionally store user’s email or user_id as well
-      Cookies.set("userEmail", res.data.email, { path: "/", secure: true, sameSite: "strict" });
-
-      // Now navigate to /profile or wherever
-      navigate("/profile");
+      // **Redirect** to the new audio page
+      navigate("/record-audio");
     } catch (err) {
       setError(err.message);
     }

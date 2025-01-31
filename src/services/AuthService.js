@@ -2,7 +2,7 @@
 
 // Points to your backend’s FastAPI routes.
 // Adjust if your API is located elsewhere or uses a different path.
-const BASE_URL = "https://clinicalpaws.com/api/signup";
+const BASE_URL = "http://127.0.0.1:8000/api/signup";
 
 /**
  * handleResponse:
@@ -99,15 +99,15 @@ const AuthService = {
    *    Requests an OTP to be sent for a user-based login flow.
    */
   loginWithOtp: async (email) => {
-    const response = await fetch(`${BASE_URL}/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
+    const response = await fetch(
+        `${BASE_URL}/login?email=${encodeURIComponent(email)}`,
+        {
+            method: "POST",
+        }
+    );
     return handleResponse(response);
   },
+
 
   /**
    * 6) get_access_token_from_refresh

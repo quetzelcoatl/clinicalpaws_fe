@@ -2,7 +2,7 @@
 
 // Points to your backend’s FastAPI routes.
 // Adjust if your API is located elsewhere or uses a different path.
-const BASE_URL = "https://dev.clinicalpaws.com/api/signup";
+const BASE_URL = "https://clinicalpaws.com/api/signup";
 
 /**
  * handleResponse:

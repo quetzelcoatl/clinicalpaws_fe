@@ -9,10 +9,10 @@ function LandingPage() {
       {/* Left Panel (dark purple) */}
       <div className="left-panel">
         <div className="left-content">
-          <h1 className="landing-brand">ChatGPT🔮</h1>
-          <h2 className="landing-title">Help me debug</h2>
+          <h1 className="landing-brand">ClinicalPaws🔮</h1>
+          <h2 className="landing-title">AI Assistant for Professionals</h2>
           <p className="landing-subtext">
-            why the linked list appears empty after I&apos;ve reversed it
+            Will surf the web for you
           </p>
         </div>
       </div>
@@ -29,11 +29,6 @@ function LandingPage() {
               Sign up
             </Link>
           </div>
-
-          {/* Extra link or button; text: "Try it first" or "Login with OTP" */}
-          <Link to="/otp-login" className="otp-link">
-            Try it first
-          </Link>
         </div>
       </div>
     </div>

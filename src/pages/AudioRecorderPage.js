@@ -81,60 +81,60 @@ function AudioRecorderPage() {
     }
   };
 
-  return (
-  <div style={{ padding: "2rem" }}>
-    <h2>Audio Recorder</h2>
-    {!recording && (
+ return (
+    <div style={{ padding: "2rem" }}>
+      <h2>Audio Recorder</h2>
+      {!recording && (
+        <button
+          onClick={startRecording}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#4CAF50",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            margin: "5px"
+          }}
+        >
+          Start Recording
+        </button>
+      )}
+      {recording && (
+        <button
+          onClick={stopRecording}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#f44336",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            margin: "5px"
+          }}
+        >
+          Stop Recording
+        </button>
+      )}
+      <br /><br />
       <button
-        onClick={startRecording}
+        onClick={uploadAudio}
+        disabled={!audioBlob}
         style={{
           padding: "10px 20px",
-          backgroundColor: "#4CAF50",
+          backgroundColor: "#2196F3",
           color: "white",
           border: "none",
           borderRadius: "4px",
           cursor: "pointer",
-          margin: "5px"
+          margin: "5px",
+          opacity: audioBlob ? 1 : 0.5
         }}
       >
-        Start Recording
+        Upload Audio
       </button>
-    )}
-    {recording && (
-      <button
-        onClick={stopRecording}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#f44336",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: "pointer",
-          margin: "5px"
-        }}
-      >
-        Stop Recording
-      </button>
-    )}
-    <br /><br />
-    <button
-      onClick={uploadAudio}
-      disabled={!audioBlob}
-      style={{
-        padding: "10px 20px",
-        backgroundColor: "#2196F3",
-        color: "white",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer",
-        margin: "5px",
-        opacity: audioBlob ? 1 : 0.5
-      }}
-    >
-      Upload Audio
-    </button>
-  </div>
-);
-
+    </div>
+  );
+} // Added missing closing brace for component function
 
 export default AudioRecorderPage;

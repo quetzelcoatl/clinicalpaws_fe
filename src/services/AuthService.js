@@ -30,15 +30,22 @@ const AuthService = {
    *    Endpoint: POST /api/signup/new_signup_email
    *    Expects query parameters: name, email, password
    */
-  newSignupEmail: async (name, email, password) => {
-    const url = `${BASE_URL}/new_signup_email?name=${encodeURIComponent(
-      name
-    )}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-    const response = await fetch(url, {
-      method: "POST",
-    });
-    return handleResponse(response);
-  },
+    newSignupEmail: async (name, email, password) => {
+      const url = `${BASE_URL}/new_signup_email`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          password: password
+        }),
+      });
+      return handleResponse(response);
+    },
+
 
   /**
    * 2) resend_otp
@@ -73,15 +80,21 @@ const AuthService = {
    *    Endpoint: POST /api/signup/verify_password
    *    Expects query parameters: email, password
    */
-  verifyPassword: async (email, password) => {
-    const url = `${BASE_URL}/verify_password?email=${encodeURIComponent(
-      email
-    )}&password=${encodeURIComponent(password)}`;
-    const response = await fetch(url, {
-      method: "POST",
-    });
-    return handleResponse(response);
-  },
+    verifyPassword: async (email, password) => {
+      const url = `${BASE_URL}/verify_password`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        }),
+      });
+      return handleResponse(response);
+    },
+
 
   /**
    * 5) login_with_otp
@@ -150,9 +163,7 @@ const AuthService = {
    *    Expects query parameters: email, reset_id, new_password
    */
   setPassword: async (email, reset_id, new_password) => {
-    const url = `${BASE_URL}/set_password?email=${encodeURIComponent(
-      email
-    )}&reset_id=${encodeURIComponent(reset_id)}&new_password=${encodeURIComponent(new_password)}`;
+    const url = `${BASE_URL}/set_password?email=${encodeURIComponent(email)}&reset_id=${encodeURIComponent(reset_id)}&new_password=${encodeURIComponent(new_password)}`;
     const response = await fetch(url, {
       method: "POST",
     });

@@ -13,7 +13,8 @@ RUN npm install
 # Copy the rest of your source code
 COPY . .
 
-# Build your React app (outputs to /app/build by default)
+# Build your React app (outputs to /app/build by default
+RUN npm install react-markdown
 RUN npm run build
 
 # 2. Production phase: use Nginx to serve the built files

@@ -1,7 +1,7 @@
+import Cookies from "js-cookie"; // If you're using js-cookie
+
 // frontend/src/services/AuthService.js
 const BASE_URL = "https://clinicalpaws.com/api/signup";
-
-import Cookies from "js-cookie"; // If you're using js-cookie
 
 // Example function to set tokens in cookies
 function storeTokensInCookie({ accessToken, refreshToken }) {

@@ -1,6 +1,5 @@
 // src/pages/AudioRecorderPage.js
-
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
@@ -9,12 +8,21 @@ function AudioRecorderPage() {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
-  const [apiResponse, setApiResponse] = useState(null);
+
+  // For polling
+  const [orderId, setOrderId] = useState(null);
+  const [orderData, setOrderData] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pollingIntervalId, setPollingIntervalId] = useState(null);
+
   const [isUploading, setIsUploading] = useState(false);
+
   const chunksRef = useRef([]);
   const navigate = useNavigate();
 
-  // Start recording audio
+  // ---------------------------
+  // 1) Start Recording
+  // ---------------------------
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -42,7 +50,9 @@ function AudioRecorderPage() {
     }
   };
 
-  // Stop recording audio
+  // ---------------------------
+  // 2) Stop Recording
+  // ---------------------------
   const stopRecording = () => {
     if (mediaRecorder) {
       mediaRecorder.stop();
@@ -51,14 +61,22 @@ function AudioRecorderPage() {
     }
   };
 
-  // Upload the recorded audio blob to FastAPI
+  // ---------------------------
+  // 3) Upload the recorded audio
+  //    to /upload_audio_file
+  // ---------------------------
   const uploadAudio = async () => {
     if (!audioBlob) {
       alert("No audio to upload.");
       return;
     }
+
     try {
       setIsUploading(true);
+      setIsProcessing(false); // We'll flip this once we get the order_id back
+      setOrderData(null); // reset previous poll results if any
+      setOrderId(null);
+
       const formData = new FormData();
       formData.append("audio_file", audioBlob, "recording.wav");
 
@@ -69,14 +87,14 @@ function AudioRecorderPage() {
         return;
       }
 
-      // Using the headers shown in your FastAPI Swagger docs:
+      // Call /upload_audio_file, expecting { order_id: ... }
       const response = await fetch(
         "https://clinicalpaws.com/api/signup/upload_audio_file",
         {
           method: "POST",
           headers: {
-            token: accessToken, // The JWT sent in "token" header
-            accept: "application/json", // So we receive JSON response
+            token: accessToken,
+            accept: "application/json",
           },
           body: formData,
         }
@@ -88,16 +106,93 @@ function AudioRecorderPage() {
         throw new Error(resData.detail || "Upload failed");
       }
 
-      // Save the API response to state so it can be displayed
-      setApiResponse(resData);
+      // We have an order_id; start polling fetch_order_details
+      if (resData.order_id) {
+        setOrderId(resData.order_id);
+        setIsProcessing(true);
+      }
     } catch (err) {
       console.error("Upload error:", err);
-      setApiResponse({ error: err.message });
+      alert("Error uploading audio: " + err.message);
     } finally {
       setIsUploading(false);
     }
   };
 
+  // ---------------------------
+  // 4) Poll the backend for status
+  //    using /fetch_order_details
+  // ---------------------------
+  const pollOrderStatus = async (order_id) => {
+    try {
+      const accessToken = Cookies.get("accessToken");
+      if (!accessToken) {
+        alert("No access token found, please log in again.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(
+        `https://clinicalpaws.com/api/signup/fetch_order_details?order_id=${order_id}`,
+        {
+          headers: {
+            token: accessToken,
+            accept: "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (response.ok) {
+        setOrderData(data);
+
+        // If completed, stop polling
+        if (data.status === "completed") {
+          setIsProcessing(false);
+          if (pollingIntervalId) {
+            clearInterval(pollingIntervalId);
+            setPollingIntervalId(null);
+          }
+        }
+      } else {
+        console.error("Error fetching order details:", data);
+      }
+    } catch (err) {
+      console.error("Error in pollOrderStatus:", err);
+    }
+  };
+
+  // ---------------------------
+  // 5) UseEffect to automatically
+  //    start / stop polling
+  // ---------------------------
+  useEffect(() => {
+    // If we have an orderId and we're in "processing" mode, start an interval
+    if (orderId && isProcessing) {
+      // Clear any old interval
+      if (pollingIntervalId) {
+        clearInterval(pollingIntervalId);
+      }
+
+      const newIntervalId = setInterval(() => {
+        pollOrderStatus(orderId);
+      }, 5000);
+
+      setPollingIntervalId(newIntervalId);
+    }
+
+    // If we ever unmount, clear the interval
+    return () => {
+      if (pollingIntervalId) {
+        clearInterval(pollingIntervalId);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, isProcessing]);
+
+  // ---------------------------
+  // 6) Render the component
+  // ---------------------------
   return (
     <div
       style={{
@@ -111,7 +206,7 @@ function AudioRecorderPage() {
     >
       <h2>Audio Recorder</h2>
       <div>
-        {!recording && (
+        {!recording ? (
           <button
             onClick={startRecording}
             style={{
@@ -127,8 +222,7 @@ function AudioRecorderPage() {
           >
             Start Recording
           </button>
-        )}
-        {recording && (
+        ) : (
           <button
             onClick={stopRecording}
             style={{
@@ -166,8 +260,15 @@ function AudioRecorderPage() {
         </button>
       </div>
 
-      {/* Display API response in a dignified card */}
-      {apiResponse && (
+      {/* Loader or status while we wait for the final result */}
+      {isProcessing && (
+        <div style={{ marginTop: "20px", color: "#555" }}>
+          <strong>Processing your audio...</strong>
+        </div>
+      )}
+
+      {/* Once orderData is loaded and status is completed, show result */}
+      {orderData && orderData.status === "completed" && (
         <div
           style={{
             marginTop: "20px",
@@ -180,51 +281,18 @@ function AudioRecorderPage() {
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >
-          {apiResponse.error ? (
-            <div style={{ color: "red" }}>
-              <strong>Error:</strong> {apiResponse.error}
-            </div>
+          <h3>Final Answer</h3>
+          {orderData.final_answer ? (
+            <ReactMarkdown>{orderData.final_answer}</ReactMarkdown>
           ) : (
-            <>
-              <h3>Response</h3>
-              {/* If final_answer is returned, only then render it */}
-              {apiResponse.final_answer ? (
-                <>
-                  <ReactMarkdown>
-                    {apiResponse.final_answer.answer || ""}
-                  </ReactMarkdown>
-                  {apiResponse.final_answer.citations &&
-                    apiResponse.final_answer.citations.length > 0 && (
-                      <div>
-                        <h4>Citations:</h4>
-                        <ul>
-                          {apiResponse.final_answer.citations.map(
-                            (cite, index) => (
-                              <li key={index}>
-                                <a
-                                  href={cite}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  {cite}
-                                </a>
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                </>
-              ) : (
-                <p>No final_answer data returned.</p>
-              )}
-              <p>
-                <strong>Filename:</strong> {apiResponse.filename}
-              </p>
-              <p>
-                <strong>Size:</strong> {apiResponse.size}
-              </p>
-            </>
+            <p>No final answer found.</p>
+          )}
+
+          <h3>Transcribed Text</h3>
+          {orderData.transcribed_text ? (
+            <p>{orderData.transcribed_text}</p>
+          ) : (
+            <p>No transcription data found.</p>
           )}
         </div>
       )}

@@ -30,12 +30,14 @@ function OtpLoginPage() {
       const res = await AuthService.verifyOtp(email, Number(otp), "login");
       const { access_token, refresh_token } = res.data;
 
-      // Store tokens in cookies
+      // Store tokens + timestamp + email in cookies
       Cookies.set("accessToken", access_token, { path: "/", secure: false });
       Cookies.set("refreshToken", refresh_token, { path: "/", secure: false });
+      Cookies.set("lastRefreshedAt", Date.now().toString(), { path: "/" });
+      Cookies.set("email", email, { path: "/" });
 
-      // **Redirect** to the new audio page
-      navigate("/record-audio");
+      // Redirect to your audio page
+      navigate("/AudioRecorderPage");
     } catch (err) {
       setError(err.message);
     }

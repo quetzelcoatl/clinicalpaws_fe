@@ -1,7 +1,25 @@
 // frontend/src/services/AuthService.js
-
-// Points to your backend’s FastAPI routes.
 const BASE_URL = "https://clinicalpaws.com/api/signup";
+
+import Cookies from "js-cookie"; // If you're using js-cookie
+
+// Example function to set tokens in cookies
+function storeTokensInCookie({ accessToken, refreshToken }) {
+  // Example: store accessToken, refreshToken, lastRefreshedAt
+  Cookies.set("accessToken", accessToken);
+  Cookies.set("refreshToken", refreshToken);
+  // Store the current time as a timestamp
+  Cookies.set("lastRefreshedAt", Date.now().toString());
+}
+
+function getTokensFromCookie() {
+  return {
+    accessToken: Cookies.get("accessToken"),
+    refreshToken: Cookies.get("refreshToken"),
+    lastRefreshedAt: Cookies.get("lastRefreshedAt"), // as a string
+  };
+}
+
 
 /**
  * handleResponse:
@@ -169,6 +187,34 @@ const AuthService = {
     });
     return handleResponse(response);
   },
+
+  getAccessTokenFromRefresh: async (email, refreshToken) => {
+    const url = `${BASE_URL}/get_access_token_from_refresh?email=${encodeURIComponent(
+      email
+    )}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+      },
+    });
+    const data = await handleResponse(response);
+
+    // Suppose your backend returns { access_token, refresh_token } in data
+    const newAccessToken = data?.access_token;
+    const newRefreshToken = data?.refresh_token;
+
+    // Store the new tokens (if your backend returns them)
+    if (newAccessToken && newRefreshToken) {
+      storeTokensInCookie({
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      });
+    }
+
+    return data;
+  }
+
 };
 
 export default AuthService;

@@ -5,17 +5,27 @@ import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 
 function AudioRecorderPage() {
+  // ---------------------------
+  // STATES
+  // ---------------------------
+  // Recorder-related
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
 
-  // For polling
+  // Processing status
+  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Polling / Order
   const [orderId, setOrderId] = useState(null);
   const [orderData, setOrderData] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [pollingIntervalId, setPollingIntervalId] = useState(null);
 
-  const [isUploading, setIsUploading] = useState(false);
+  // History pagination
+  const [historyData, setHistoryData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const chunksRef = useRef([]);
   const navigate = useNavigate();
@@ -73,8 +83,8 @@ function AudioRecorderPage() {
 
     try {
       setIsUploading(true);
-      setIsProcessing(false); // We'll flip this once we get the order_id back
-      setOrderData(null); // reset previous poll results if any
+      setIsProcessing(false);
+      setOrderData(null);
       setOrderId(null);
 
       const formData = new FormData();
@@ -87,7 +97,6 @@ function AudioRecorderPage() {
         return;
       }
 
-      // Call /upload_audio_file, expecting { order_id: ... }
       const response = await fetch(
         "https://clinicalpaws.com/api/signup/upload_audio_file",
         {
@@ -101,7 +110,6 @@ function AudioRecorderPage() {
       );
 
       const resData = await response.json();
-
       if (!response.ok) {
         throw new Error(resData.detail || "Upload failed");
       }
@@ -149,6 +157,7 @@ function AudioRecorderPage() {
         // If completed, stop polling
         if (data.status === "completed") {
           setIsProcessing(false);
+
           if (pollingIntervalId) {
             clearInterval(pollingIntervalId);
             setPollingIntervalId(null);
@@ -167,7 +176,6 @@ function AudioRecorderPage() {
   //    start / stop polling
   // ---------------------------
   useEffect(() => {
-    // If we have an orderId and we're in "processing" mode, start an interval
     if (orderId && isProcessing) {
       // Clear any old interval
       if (pollingIntervalId) {
@@ -181,7 +189,6 @@ function AudioRecorderPage() {
       setPollingIntervalId(newIntervalId);
     }
 
-    // If we ever unmount, clear the interval
     return () => {
       if (pollingIntervalId) {
         clearInterval(pollingIntervalId);
@@ -191,111 +198,204 @@ function AudioRecorderPage() {
   }, [orderId, isProcessing]);
 
   // ---------------------------
-  // 6) Render the component
+  // 6) Single button logic:
+  //    - If NOT recording => start
+  //    - If recording => stop and upload
+  //    After that, button is disabled
+  //    until processing is complete
+  // ---------------------------
+  const handleMicClick = async () => {
+    if (!recording) {
+      // Start recording
+      await startRecording();
+    } else {
+      // Stop recording and immediately upload
+      stopRecording();
+      // Once stopped, we do the upload
+      uploadAudio();
+    }
+  };
+
+  // Determine if the button is clickable
+  // We allow a second click only if we're currently recording.
+  // Once we stop -> we disable until the entire pipeline is done.
+  const buttonDisabled =
+    (!recording && (isUploading || isProcessing)) ||
+    (recording && (isUploading || isProcessing));
+
+  // Button label (and optional icon)
+  let buttonLabel = "Start Recording 🎤";
+  if (recording) {
+    buttonLabel = "Stop Recording 🔴";
+  } else if (isUploading || isProcessing) {
+    buttonLabel = "Processing...";
+  }
+
+  // ---------------------------
+  // 7) History (Paginated)
+  //    Adjust the fetchHistory call to match your actual backend.
+  // ---------------------------
+  const fetchHistory = async (page) => {
+    try {
+      const accessToken = Cookies.get("accessToken");
+      if (!accessToken) {
+        alert("No access token found, please log in again.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(
+        `https://clinicalpaws.com/api/signup/fetch_history?page=${page}`,
+        {
+          headers: {
+            token: accessToken,
+            accept: "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        // Adjust based on how your backend returns the data
+        setHistoryData(data.history); // e.g. data.history or data.results
+        setTotalPages(data.total_pages);
+      } else {
+        console.error("Error fetching history:", data);
+      }
+    } catch (err) {
+      console.error("Error in fetchHistory:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev));
+  };
+
+  // ---------------------------
+  // 8) Render the component
   // ---------------------------
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "2rem",
-        minHeight: "100vh",
-        backgroundColor: "#f0f2f5",
-      }}
-    >
-      <h2>Audio Recorder</h2>
-      <div>
-        {!recording ? (
-          <button
-            onClick={startRecording}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              margin: "5px",
-              minWidth: "150px",
-            }}
-          >
-            Start Recording
-          </button>
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      {/** Left-side: History Panel */}
+      <div
+        style={{
+          width: "300px",
+          borderRight: "1px solid #ddd",
+          padding: "1rem",
+          backgroundColor: "#f7f7f7",
+        }}
+      >
+        <h3>History</h3>
+        {historyData && historyData.length > 0 ? (
+          historyData.map((item) => (
+            <div
+              key={item.id}
+              style={{
+                padding: "10px",
+                marginBottom: "10px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                backgroundColor: "#fff",
+              }}
+            >
+              {/* Adjust how you display each item based on your data */}
+              <p><strong>ID:</strong> {item.id}</p>
+              <p><strong>Filename:</strong> {item.filename}</p>
+              <p><strong>Date:</strong> {item.timestamp}</p>
+            </div>
+          ))
         ) : (
-          <button
-            onClick={stopRecording}
+          <p>No history found.</p>
+        )}
+
+        {/** Pagination Buttons */}
+        <div style={{ marginTop: "1rem" }}>
+          <button onClick={handlePrevPage} disabled={currentPage <= 1}>
+            Prev
+          </button>
+          <span style={{ margin: "0 10px" }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button onClick={handleNextPage} disabled={currentPage >= totalPages}>
+            Next
+          </button>
+        </div>
+      </div>
+
+      {/** Right-side: Main Recorder/Results */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2rem",
+          backgroundColor: "#f0f2f5",
+        }}
+      >
+        {/** The single mic button */}
+        <button
+          onClick={handleMicClick}
+          disabled={buttonDisabled}
+          style={{
+            padding: "15px 30px",
+            fontSize: "16px",
+            borderRadius: "50px",
+            border: "none",
+            cursor: buttonDisabled ? "not-allowed" : "pointer",
+            backgroundColor: recording ? "#f44336" : "#4CAF50",
+            color: "white",
+            marginBottom: "20px",
+          }}
+        >
+          {buttonLabel}
+        </button>
+
+        {isProcessing && (
+          <div style={{ marginTop: "20px", color: "#555" }}>
+            <strong>Processing your audio...</strong>
+          </div>
+        )}
+
+        {/** Once orderData is loaded and status is completed, show result */}
+        {orderData && orderData.status === "completed" && (
+          <div
             style={{
-              padding: "10px 20px",
-              backgroundColor: "#f44336",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              margin: "5px",
-              minWidth: "150px",
+              marginTop: "20px",
+              padding: "15px",
+              border: "1px solid #ddd",
+              borderRadius: "5px",
+              backgroundColor: "#fff",
+              maxWidth: "600px",
+              width: "100%",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             }}
           >
-            Stop Recording
-          </button>
+            <h3>Final Answer</h3>
+            {orderData.final_answer ? (
+              <ReactMarkdown>{orderData.final_answer}</ReactMarkdown>
+            ) : (
+              <p>No final answer found.</p>
+            )}
+
+            <h3>Transcribed Text</h3>
+            {orderData.transcribed_text ? (
+              <p>{orderData.transcribed_text}</p>
+            ) : (
+              <p>No transcription data found.</p>
+            )}
+          </div>
         )}
       </div>
-      <div>
-        <button
-          onClick={uploadAudio}
-          disabled={!audioBlob || isUploading}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            margin: "5px",
-            opacity: audioBlob && !isUploading ? 1 : 0.5,
-            minWidth: "150px",
-          }}
-        >
-          {isUploading ? "Uploading..." : "Upload Audio"}
-        </button>
-      </div>
-
-      {/* Loader or status while we wait for the final result */}
-      {isProcessing && (
-        <div style={{ marginTop: "20px", color: "#555" }}>
-          <strong>Processing your audio...</strong>
-        </div>
-      )}
-
-      {/* Once orderData is loaded and status is completed, show result */}
-      {orderData && orderData.status === "completed" && (
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "15px",
-            border: "1px solid #ddd",
-            borderRadius: "5px",
-            backgroundColor: "#fff",
-            maxWidth: "600px",
-            width: "100%",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h3>Final Answer</h3>
-          {orderData.final_answer ? (
-            <ReactMarkdown>{orderData.final_answer}</ReactMarkdown>
-          ) : (
-            <p>No final answer found.</p>
-          )}
-
-          <h3>Transcribed Text</h3>
-          {orderData.transcribed_text ? (
-            <p>{orderData.transcribed_text}</p>
-          ) : (
-            <p>No transcription data found.</p>
-          )}
-        </div>
-      )}
     </div>
   );
 }

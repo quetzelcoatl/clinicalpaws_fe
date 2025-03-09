@@ -16,10 +16,12 @@ function SignupPage() {
 
     try {
       const res = await AuthService.newSignupEmail(name, email, password);
-      // Possibly navigate to verify-otp:
-      navigate("/verify-otp");
+      // Navigate to verify-otp page with email in the state and as a query parameter for backup
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}&purpose=signup`, { 
+        state: { email, purpose: "signup" } 
+      });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Signup failed. Please try again.");
     }
   };
 

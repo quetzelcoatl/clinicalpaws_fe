@@ -464,11 +464,11 @@ function AudioRecorderPage() {
         display: "flex",
         minHeight: "100vh",
         position: "relative",
-        backgroundColor: "#121212", // Dark background
-        fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
-        color: "#e0e0e0", // Light text for dark background
-        flexDirection: isMobile ? "column" : "row", // Stack vertically on mobile
-        overflow: "hidden", // Prevent scrolling of the container
+        backgroundColor: "#111827", // More modern dark blue-gray
+        fontFamily: "'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+        color: "#f3f4f6", // Lighter text for better contrast
+        flexDirection: isMobile ? "column" : "row",
+        overflow: "hidden",
         width: "100%",
       }}
     >
@@ -476,41 +476,44 @@ function AudioRecorderPage() {
       <div
         style={{
           width: showHistoryPanel 
-            ? isMobile ? "100%" : "280px" 
+            ? isMobile ? "100%" : "300px" // Slightly wider for better reading
             : "0",
-          borderRight: !isMobile && "1px solid #2a2a2a",
-          borderBottom: isMobile && showHistoryPanel && "1px solid #2a2a2a",
-          backgroundColor: "#1a1a1a", // Slightly lighter than main background
+          borderRight: !isMobile && "1px solid rgba(255,255,255,0.08)",
+          borderBottom: isMobile && showHistoryPanel && "1px solid rgba(255,255,255,0.08)",
+          backgroundColor: "#1f2937", // Lighter than main background
           overflowY: "hidden",
           height: isMobile ? (showHistoryPanel ? "50vh" : "0") : "100vh",
-          transition: "all 0.3s ease",
+          transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)", // Smooth easing
           position: isMobile ? "absolute" : "relative",
           display: "flex",
           flexDirection: "column",
           zIndex: isMobile ? "200" : "100",
           maxHeight: isMobile && showHistoryPanel ? "50vh" : "100vh",
+          boxShadow: !isMobile && showHistoryPanel ? "inset -10px 0 15px -12px rgba(0,0,0,0.3)" : "none",
         }}
       >
         {/* Logo/Brand at the top of the sidebar - Only show when panel is visible */}
         {showHistoryPanel && (
           <div style={{ 
-            padding: "15px 20px", 
-            borderBottom: "1px solid #2a2a2a",
+            padding: "20px", 
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
             display: "flex",
             alignItems: "center"
           }}>
             <div style={{ 
-              fontWeight: "bold", 
+              fontWeight: "600", 
               fontSize: isMobile ? "16px" : "20px", 
-              color: "#4A90E2",
+              color: "#60A5FA", // Brighter blue
               display: "flex",
-              alignItems: "center"
+              alignItems: "center",
+              letterSpacing: "0.5px"
             }}>
               <FontAwesomeIcon 
                 icon={faMicrophone} 
                 style={{ 
-                  marginRight: "10px", 
-                  color: "#4A90E2" 
+                  marginRight: "12px", 
+                  color: "#60A5FA",
+                  fontSize: isMobile ? "16px" : "18px"
                 }} 
               />
               Clinical Paws
@@ -526,15 +529,16 @@ function AudioRecorderPage() {
               overflowY: "auto",
               height: "100%",
               flex: 1,
-              WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
+              WebkitOverflowScrolling: "touch",
             }}
           >
             <h3 style={{ 
               marginTop: 0, 
-              color: "#e0e0e0", 
+              color: "#f3f4f6", 
               fontSize: isMobile ? "16px" : "18px",
-              borderBottom: "1px solid #333",
-              paddingBottom: "10px"
+              borderBottom: "1px solid rgba(255,255,255,0.1)",
+              paddingBottom: "12px",
+              fontWeight: "500"
             }}>
               History
             </h3>
@@ -547,21 +551,25 @@ function AudioRecorderPage() {
                     key={item.id}
                     onClick={() => handleHistoryItemClick(item)}
                     style={{
-                      padding: isMobile ? "10px" : "12px",
+                      padding: isMobile ? "12px" : "14px",
                       marginBottom: "10px",
-                      border: `1px solid ${isSelected ? "#4A90E2" : "#333"}`,
-                      borderRadius: "8px",
-                      backgroundColor: isSelected ? "#2c3e50" : "#252525",
+                      border: isSelected ? "none" : "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: "12px",
+                      backgroundColor: isSelected ? "#3B82F6" : "rgba(255,255,255,0.03)",
                       cursor: "pointer",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                      boxShadow: isSelected ? "0 2px 4px rgba(74, 144, 226, 0.2)" : "none",
+                      boxShadow: isSelected 
+                        ? "0 4px 12px rgba(59, 130, 246, 0.3)" 
+                        : "0 2px 4px rgba(0,0,0,0.1)",
                       transition: "all 0.2s ease",
                       fontSize: isMobile ? "13px" : "14px",
-                      minHeight: isMobile ? "44px" : "auto", // Ensure touch-friendly size
+                      minHeight: isMobile ? "44px" : "auto",
                       display: "flex",
                       alignItems: "center",
+                      color: isSelected ? "#ffffff" : "#e2e8f0",
+                      transform: isSelected ? "translateY(-1px)" : "none",
                     }}
                   >
                     {firstLine}
@@ -569,11 +577,25 @@ function AudioRecorderPage() {
                 );
               })
             ) : (
-              <p style={{ color: "#999" }}>No history found.</p>
+              <p style={{ 
+                color: "#94a3b8", 
+                textAlign: "center",
+                padding: "20px 0",
+                fontSize: "14px" 
+              }}>
+                No history found.
+              </p>
             )}
 
             {isLoadingHistory && (
-              <p style={{ color: "#999", textAlign: "center" }}>Loading more history...</p>
+              <p style={{ 
+                color: "#94a3b8", 
+                textAlign: "center",
+                fontStyle: "italic",
+                fontSize: "14px"
+              }}>
+                Loading more history...
+              </p>
             )}
           </div>
         )}
@@ -587,27 +609,31 @@ function AudioRecorderPage() {
           top: isMobile ? "70px" : "50%",
           left: isMobile 
             ? "10px"
-            : (showHistoryPanel ? "264px" : "0"),
-          width: "44px", // Larger touch target
-          height: "44px", // Larger touch target
+            : (showHistoryPanel ? "284px" : "0"),
+          width: "44px",
+          height: "44px",
           borderRadius: "50%",
-          backgroundColor: "#333",
+          backgroundColor: "#374151", // Slightly lighter than background
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          zIndex: isMobile ? "300" : "100", // Higher z-index to ensure visibility
-          boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-          border: "1px solid #444",
-          transition: isMobile 
-            ? "background-color 0.3s" 
-            : "left 0.3s ease", // Different transitions for mobile/desktop
-          transform: isMobile ? "none" : "translateY(-50%)", // Center vertically on desktop only
+          zIndex: isMobile ? "300" : "100",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          transform: isMobile ? "none" : "translateY(-50%)",
+          color: "#60A5FA",
+          opacity: 0.9,
+          "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+            opacity: 1,
+            backgroundColor: "#4B5563"
+          }
         }}
       >
         <FontAwesomeIcon 
           icon={showHistoryPanel ? faChevronLeft : faChevronRight} 
-          style={{ color: "#e0e0e0" }} 
+          style={{ color: "#e2e8f0" }} 
         />
       </div>
 
@@ -620,22 +646,24 @@ function AudioRecorderPage() {
           height: "100vh",
           position: "relative",
           width: "100%",
-          overflow: isMobile ? "visible" : "hidden", // Hide overflow on desktop
+          overflow: isMobile ? "visible" : "hidden",
+          backdropFilter: "blur(5px)", // Subtle effect when elements overlap
         }}
       >
         {/* Top Navigation Bar */}
         <div
           style={{
-            height: isMobile ? "60px" : "60px",
-            backgroundColor: "#1a1a1a",
-            borderBottom: "1px solid #2a2a2a",
+            height: isMobile ? "60px" : "70px",
+            backgroundColor: "rgba(31, 41, 55, 0.95)", // Slightly transparent
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between", // Changed from flex-end to space-between
-            padding: "0 20px",
+            justifyContent: "space-between",
+            padding: "0 24px",
             zIndex: 100,
-            position: "relative", // Ensure positioning context
-            width: "100%", // Full width
+            position: "relative",
+            width: "100%",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
           {/* Empty div for spacing or logo if needed */}
@@ -644,9 +672,10 @@ function AudioRecorderPage() {
           {/* Title for mobile (centered) */}
           {isMobile && (
             <div style={{ 
-              fontWeight: "bold", 
-              fontSize: "16px", 
-              color: "#4A90E2"
+              fontWeight: "600", 
+              fontSize: "18px", 
+              color: "#60A5FA",
+              letterSpacing: "0.5px"
             }}>
               Clinical Paws
             </div>
@@ -659,14 +688,20 @@ function AudioRecorderPage() {
                 width: "40px",
                 height: "40px",
                 borderRadius: "50%",
-                backgroundColor: avatarBgColor,
+                background: `linear-gradient(135deg, ${avatarBgColor}, ${avatarBgColor}dd)`, // Subtle gradient
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#fff",
-                fontWeight: "bold",
+                fontWeight: "600",
                 cursor: "pointer",
                 userSelect: "none",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                border: "2px solid rgba(255,255,255,0.1)",
+                transition: "transform 0.2s ease",
+                "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                  transform: "scale(1.05)"
+                }
               }}
               onClick={toggleProfileMenu}
             >
@@ -676,70 +711,85 @@ function AudioRecorderPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "50px",
+                  top: "55px",
                   right: 0,
-                  backgroundColor: "#252525",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                  borderRadius: "8px",
+                  backgroundColor: "#1f2937",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05)",
+                  borderRadius: "12px",
                   zIndex: 999,
-                  minWidth: isMobile ? "160px" : "180px",
-                  border: "1px solid #333",
-                  maxWidth: isMobile ? "calc(100vw - 40px)" : "auto", // Prevent overflow on mobile
+                  minWidth: isMobile ? "160px" : "200px",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  maxWidth: isMobile ? "calc(100vw - 40px)" : "auto",
+                  animation: "fadeIn 0.2s ease-out", // Animation for menu appearance
+                  overflow: "hidden", // Keep rounded corners on internal elements
                 }}
               >
                 <div
                   style={{
-                    padding: "12px 16px",
-                    borderBottom: "1px solid #333",
-                    fontWeight: "bold",
-                    color: "#e0e0e0",
-                    wordBreak: "break-word", // Prevent text overflow
+                    padding: "16px 20px",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    fontWeight: "600",
+                    color: "#f3f4f6",
+                    wordBreak: "break-word",
+                    fontSize: "15px"
                   }}
                 >
                   {userName || "User"}
                 </div>
                 <div
                   style={{
-                    padding: "12px 16px",
+                    padding: "12px 20px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    color: "#e0e0e0",
-                    minHeight: "44px", // Touch-friendly
+                    color: "#e2e8f0",
+                    minHeight: "44px",
+                    transition: "background-color 0.15s ease",
+                    "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                      backgroundColor: "rgba(255,255,255,0.05)"
+                    }
                   }}
                   onClick={handleMyProfile}
                 >
-                  <FontAwesomeIcon icon={faUser} style={{ marginRight: "10px", width: "16px", flexShrink: 0 }} />
-                  <span style={{ whiteSpace: "nowrap" }}>My Profile</span>
+                  <FontAwesomeIcon icon={faUser} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#60A5FA" }} />
+                  <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>My Profile</span>
                 </div>
                 <div
                   style={{
-                    padding: "12px 16px",
+                    padding: "12px 20px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    color: "#e0e0e0",
-                    minHeight: "44px", // Touch-friendly
+                    color: "#e2e8f0",
+                    minHeight: "44px",
+                    transition: "background-color 0.15s ease",
+                    "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                      backgroundColor: "rgba(255,255,255,0.05)"
+                    }
                   }}
                   onClick={handleSettings}
                 >
-                  <FontAwesomeIcon icon={faCog} style={{ marginRight: "10px", width: "16px", flexShrink: 0 }} />
-                  <span style={{ whiteSpace: "nowrap" }}>Settings</span>
+                  <FontAwesomeIcon icon={faCog} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#60A5FA" }} />
+                  <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>Settings</span>
                 </div>
                 <div
                   style={{
-                    padding: "12px 16px",
+                    padding: "12px 20px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    color: "#ff6b6b",
-                    borderTop: "1px solid #333",
-                    minHeight: "44px", // Touch-friendly
+                    color: "#f87171", // More vibrant red
+                    borderTop: "1px solid rgba(255,255,255,0.08)",
+                    minHeight: "44px",
+                    transition: "background-color 0.15s ease",
+                    "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                      backgroundColor: "rgba(255,255,255,0.05)"
+                    }
                   }}
                   onClick={handleLogout}
                 >
-                  <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: "10px", width: "16px", flexShrink: 0 }} />
-                  <span style={{ whiteSpace: "nowrap" }}>Logout</span>
+                  <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#f87171" }} />
+                  <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>Logout</span>
                 </div>
               </div>
             )}
@@ -754,13 +804,16 @@ function AudioRecorderPage() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            padding: isMobile ? "1rem" : "2rem",
-            backgroundColor: "#121212",
+            padding: isMobile ? "1.5rem 1rem" : "2rem",
+            backgroundColor: "#111827", // Main dark blue-gray background
             overflowY: "auto",
-            WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
-            width: "100%", // Full width
-            boxSizing: "border-box", // Include padding in width calculation
-            paddingRight: isMobile ? "1rem" : "2rem", // Remove extra padding for scrollbar
+            WebkitOverflowScrolling: "touch",
+            width: "100%",
+            boxSizing: "border-box",
+            paddingRight: isMobile ? "1rem" : "2rem",
+            backgroundImage: "radial-gradient(ellipse at top, rgba(59, 130, 246, 0.08), transparent 80%)",
+            backgroundSize: "100% 1000px",
+            backgroundRepeat: "no-repeat",
           }}
         >
           {/* Microphone Button with Circle */}
@@ -770,39 +823,63 @@ function AudioRecorderPage() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              marginTop: isMobile ? "1rem" : "2rem",
-              marginBottom: isMobile ? "1.5rem" : "3rem",
+              marginTop: isMobile ? "1.5rem" : "2.5rem",
+              marginBottom: isMobile ? "2rem" : "3.5rem",
             }}
           >
             <div
               onClick={handleMicClick}
               style={{
-                width: isMobile ? "90px" : "120px",
-                height: isMobile ? "90px" : "120px",
+                width: isMobile ? "100px" : "130px",
+                height: isMobile ? "100px" : "130px",
                 borderRadius: "50%",
-                backgroundColor: recording ? "#f44336" : "#4A90E2",
+                background: recording 
+                  ? "linear-gradient(135deg, #ef4444, #dc2626)" // Red gradient when recording
+                  : "linear-gradient(135deg, #3B82F6, #2563EB)", // Blue gradient when ready
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: buttonDisabled ? "not-allowed" : "pointer",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-                transition: "all 0.3s ease",
+                boxShadow: recording 
+                  ? "0 8px 20px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.2)" 
+                  : "0 8px 20px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.2)",
+                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                 opacity: buttonDisabled ? 0.7 : 1,
+                transform: buttonDisabled ? "none" : "translateY(0)",
+                "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                  transform: buttonDisabled ? "none" : "translateY(-3px)",
+                  boxShadow: recording
+                    ? "0 12px 28px rgba(239, 68, 68, 0.35), 0 0 0 2px rgba(239, 68, 68, 0.25)"
+                    : "0 12px 28px rgba(59, 130, 246, 0.35), 0 0 0 2px rgba(59, 130, 246, 0.25)"
+                },
+                position: "relative",
               }}
             >
+              {/* Pulse animation for recording state */}
+              {recording && (
+                <div style={{
+                  position: "absolute",
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  background: "rgba(239, 68, 68, 0.5)",
+                  animation: "pulse 2s infinite"
+                }}></div>
+              )}
               <FontAwesomeIcon
                 icon={recording ? faMicrophoneSlash : faMicrophone}
                 style={{
-                  fontSize: isMobile ? "32px" : "48px",
+                  fontSize: isMobile ? "36px" : "52px",
                   color: "#fff",
+                  zIndex: 2, // Place above pulse animation
                 }}
               />
             </div>
             <div
               style={{
-                marginTop: "15px",
-                fontSize: isMobile ? "14px" : "16px",
-                color: "#e0e0e0",
+                marginTop: "20px",
+                fontSize: isMobile ? "15px" : "17px",
+                color: "#e2e8f0",
                 fontWeight: "500",
                 textAlign: "center",
               }}
@@ -815,33 +892,44 @@ function AudioRecorderPage() {
             <div
               style={{
                 marginTop: "20px",
-                padding: isMobile ? "10px 15px" : "15px 20px",
-                backgroundColor: "rgba(74, 144, 226, 0.1)",
-                borderRadius: "8px",
-                color: "#4A90E2",
+                padding: isMobile ? "12px 18px" : "16px 24px",
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                borderRadius: "12px",
+                color: "#60A5FA",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                border: "1px solid rgba(74, 144, 226, 0.2)",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                border: "1px solid rgba(59, 130, 246, 0.15)",
                 width: isMobile ? "90%" : "auto",
-                maxWidth: "100%",
+                maxWidth: "500px",
+                backdropFilter: "blur(8px)",
+                fontWeight: "500",
               }}
             >
               <div className="spinner" style={{
                 width: "20px",
                 height: "20px",
-                border: "3px solid rgba(74, 144, 226, 0.3)",
+                border: "3px solid rgba(59, 130, 246, 0.2)",
                 borderRadius: "50%",
-                borderTop: "3px solid #4A90E2",
+                borderTop: "3px solid #60A5FA",
                 animation: "spin 1s linear infinite",
-                marginRight: "10px",
+                marginRight: "12px",
               }}></div>
               <style>
                 {`
                 @keyframes spin {
                   0% { transform: rotate(0deg); }
                   100% { transform: rotate(360deg); }
+                }
+                @keyframes pulse {
+                  0% { transform: scale(0.95); opacity: 0.7; }
+                  50% { transform: scale(1.05); opacity: 0.3; }
+                  100% { transform: scale(0.95); opacity: 0.7; }
+                }
+                @keyframes fadeIn {
+                  0% { opacity: 0; transform: translateY(-10px); }
+                  100% { opacity: 1; transform: translateY(0); }
                 }
                 `}
               </style>
@@ -853,78 +941,102 @@ function AudioRecorderPage() {
           {selectedHistoryItem ? (
             <div
               style={{
-                marginTop: "20px",
-                padding: isMobile ? "20px" : "30px",
-                border: "1px solid #333",
-                borderRadius: "12px",
-                backgroundColor: "#1e1e1e",
-                maxWidth: "900px", // Increased width
+                marginTop: "25px",
+                padding: isMobile ? "24px" : "32px",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "16px",
+                backgroundColor: "#1f2937",
+                maxWidth: "900px",
                 width: "100%",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                overflowX: "hidden", // Prevent horizontal scrolling on small screens
+                boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                overflowX: "hidden",
+                animation: "fadeIn 0.3s ease-out",
               }}
             >
               {/* Transcribed Text - Now First */}
               <div style={{ 
                 display: "flex", 
                 alignItems: "center", 
-                marginBottom: "15px",
-                borderBottom: "1px solid #333",
-                paddingBottom: "10px"
+                marginBottom: "18px",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                paddingBottom: "14px"
               }}>
-                <h3 style={{ margin: 0, color: "#e0e0e0", fontSize: isMobile ? "16px" : "18px" }}>Transcribed Text</h3>
+                <h3 style={{ 
+                  margin: 0, 
+                  color: "#f3f4f6", 
+                  fontSize: isMobile ? "17px" : "19px",
+                  fontWeight: "600",
+                  letterSpacing: "0.3px"
+                }}>Transcribed Text</h3>
               </div>
               
               {selectedHistoryItem.transcribed_text ? (
                 <p style={{ 
-                  color: "#bbb", 
-                  lineHeight: "1.7", 
-                  fontSize: isMobile ? "14px" : "15px", 
-                  marginBottom: "30px",
-                  padding: "0 0 10px 0",
-                  borderBottom: "1px solid rgba(255,255,255,0.05)",
-                  wordBreak: "break-word", // Handle long words on small screens
+                  color: "#d1d5db", 
+                  lineHeight: "1.8", 
+                  fontSize: isMobile ? "15px" : "16px", 
+                  marginBottom: "35px",
+                  padding: "0 0 16px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                  wordBreak: "break-word",
+                  fontWeight: "400",
+                  letterSpacing: "0.2px"
                 }}>{selectedHistoryItem.transcribed_text}</p>
               ) : (
-                <p style={{ color: "#999", marginBottom: "30px" }}>No transcription data found.</p>
+                <p style={{ 
+                  color: "#94a3b8", 
+                  marginBottom: "35px",
+                  fontStyle: "italic"
+                }}>No transcription data found.</p>
               )}
 
               {/* Final Answer - Now Second */}
               <div style={{ 
                 display: "flex", 
                 alignItems: "center", 
-                marginBottom: "15px",
-                borderBottom: "1px solid #333",
-                paddingBottom: "10px"
+                marginBottom: "18px",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                paddingBottom: "14px"
               }}>
                 <div style={{
-                  width: "30px",
-                  height: "30px",
+                  width: "34px",
+                  height: "34px",
                   borderRadius: "50%",
-                  backgroundColor: "#4A90E2",
+                  background: "linear-gradient(135deg, #3B82F6, #2563EB)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: "10px"
+                  marginRight: "12px",
+                  boxShadow: "0 2px 6px rgba(59, 130, 246, 0.3)",
                 }}>
-                  <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "14px" }} />
+                  <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "15px" }} />
                 </div>
-                <h3 style={{ margin: 0, color: "#e0e0e0", fontSize: isMobile ? "16px" : "18px" }}>Final Answer</h3>
+                <h3 style={{ 
+                  margin: 0, 
+                  color: "#f3f4f6", 
+                  fontSize: isMobile ? "17px" : "19px",
+                  fontWeight: "600",
+                  letterSpacing: "0.3px"
+                }}>Final Answer</h3>
               </div>
               
               {selectedHistoryItem.final_answer ? (
                 <div style={{ 
                   lineHeight: "1.8", 
-                  color: "#e0e0e0", 
-                  fontSize: isMobile ? "14px" : "16px",
+                  color: "#f3f4f6", 
+                  fontSize: isMobile ? "15px" : "16px",
                   letterSpacing: "0.2px",
                   overflow: "auto",
-                  wordBreak: "break-word", // Handle long words on small screens
+                  wordBreak: "break-word",
+                  fontWeight: "400"
                 }}>
                   <ReactMarkdown>{selectedHistoryItem.final_answer}</ReactMarkdown>
                 </div>
               ) : (
-                <p style={{ color: "#999" }}>No final answer found.</p>
+                <p style={{ 
+                  color: "#94a3b8",
+                  fontStyle: "italic" 
+                }}>No final answer found.</p>
               )}
             </div>
           ) : (
@@ -932,78 +1044,102 @@ function AudioRecorderPage() {
               {orderData && orderData.status === "completed" && (
                 <div
                   style={{
-                    marginTop: "20px",
-                    padding: isMobile ? "20px" : "30px",
-                    border: "1px solid #333",
-                    borderRadius: "12px",
-                    backgroundColor: "#1e1e1e",
-                    maxWidth: "900px", // Increased width
+                    marginTop: "25px",
+                    padding: isMobile ? "24px" : "32px",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: "16px",
+                    backgroundColor: "#1f2937",
+                    maxWidth: "900px",
                     width: "100%",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                    overflowX: "hidden", // Prevent horizontal scrolling on small screens
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                    overflowX: "hidden",
+                    animation: "fadeIn 0.3s ease-out",
                   }}
                 >
                   {/* Transcribed Text - Now First */}
                   <div style={{ 
                     display: "flex", 
                     alignItems: "center", 
-                    marginBottom: "15px",
-                    borderBottom: "1px solid #333",
-                    paddingBottom: "10px"
+                    marginBottom: "18px",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    paddingBottom: "14px"
                   }}>
-                    <h3 style={{ margin: 0, color: "#e0e0e0", fontSize: isMobile ? "16px" : "18px" }}>Transcribed Text</h3>
+                    <h3 style={{ 
+                      margin: 0, 
+                      color: "#f3f4f6", 
+                      fontSize: isMobile ? "17px" : "19px",
+                      fontWeight: "600",
+                      letterSpacing: "0.3px"
+                    }}>Transcribed Text</h3>
                   </div>
                   
                   {orderData.transcribed_text ? (
                     <p style={{ 
-                      color: "#bbb", 
-                      lineHeight: "1.7", 
-                      fontSize: isMobile ? "14px" : "15px", 
-                      marginBottom: "30px",
-                      padding: "0 0 10px 0",
-                      borderBottom: "1px solid rgba(255,255,255,0.05)",
-                      wordBreak: "break-word", // Handle long words on small screens
+                      color: "#d1d5db", 
+                      lineHeight: "1.8", 
+                      fontSize: isMobile ? "15px" : "16px", 
+                      marginBottom: "35px",
+                      padding: "0 0 16px 0",
+                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      wordBreak: "break-word",
+                      fontWeight: "400",
+                      letterSpacing: "0.2px"
                     }}>{orderData.transcribed_text}</p>
                   ) : (
-                    <p style={{ color: "#999", marginBottom: "30px" }}>No transcription data found.</p>
+                    <p style={{ 
+                      color: "#94a3b8", 
+                      marginBottom: "35px",
+                      fontStyle: "italic"
+                    }}>No transcription data found.</p>
                   )}
 
                   {/* Final Answer - Now Second */}
                   <div style={{ 
                     display: "flex", 
                     alignItems: "center", 
-                    marginBottom: "15px",
-                    borderBottom: "1px solid #333",
-                    paddingBottom: "10px"
+                    marginBottom: "18px",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    paddingBottom: "14px"
                   }}>
                     <div style={{
-                      width: "30px",
-                      height: "30px",
+                      width: "34px",
+                      height: "34px",
                       borderRadius: "50%",
-                      backgroundColor: "#4A90E2",
+                      background: "linear-gradient(135deg, #3B82F6, #2563EB)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      marginRight: "10px"
+                      marginRight: "12px",
+                      boxShadow: "0 2px 6px rgba(59, 130, 246, 0.3)",
                     }}>
-                      <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "14px" }} />
+                      <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "15px" }} />
                     </div>
-                    <h3 style={{ margin: 0, color: "#e0e0e0", fontSize: isMobile ? "16px" : "18px" }}>Final Answer</h3>
+                    <h3 style={{ 
+                      margin: 0, 
+                      color: "#f3f4f6", 
+                      fontSize: isMobile ? "17px" : "19px",
+                      fontWeight: "600",
+                      letterSpacing: "0.3px"
+                    }}>Final Answer</h3>
                   </div>
                   
                   {orderData.final_answer ? (
                     <div style={{ 
                       lineHeight: "1.8", 
-                      color: "#e0e0e0", 
-                      fontSize: isMobile ? "14px" : "16px",
+                      color: "#f3f4f6", 
+                      fontSize: isMobile ? "15px" : "16px",
                       letterSpacing: "0.2px",
                       overflow: "auto",
-                      wordBreak: "break-word", // Handle long words on small screens
+                      wordBreak: "break-word",
+                      fontWeight: "400"
                     }}>
                       <ReactMarkdown>{orderData.final_answer}</ReactMarkdown>
                     </div>
                   ) : (
-                    <p style={{ color: "#999" }}>No final answer found.</p>
+                    <p style={{ 
+                      color: "#94a3b8",
+                      fontStyle: "italic" 
+                    }}>No final answer found.</p>
                   )}
                 </div>
               )}
@@ -1015,12 +1151,15 @@ function AudioRecorderPage() {
       {/* Add viewport meta tag for mobile responsiveness */}
       <style>
         {`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          
           @media (max-width: 768px) {
             body {
               margin: 0;
               padding: 0;
               overflow-x: hidden;
               -webkit-text-size-adjust: 100%;
+              font-family: 'Inter', sans-serif;
             }
           }
           
@@ -1032,6 +1171,7 @@ function AudioRecorderPage() {
               height: 100%;
               overflow-y: auto;
               overflow-x: hidden;
+              font-family: 'Inter', sans-serif;
             }
           }
           
@@ -1041,6 +1181,7 @@ function AudioRecorderPage() {
               overflow: auto;
               width: 100%;
               height: 100%;
+              font-family: 'Inter', sans-serif;
             }
             
             /* Custom scrollbar styling for all devices */
@@ -1050,38 +1191,38 @@ function AudioRecorderPage() {
             }
             
             ::-webkit-scrollbar-track {
-              background: #1a1a1a;
+              background: #1f2937;
               border-radius: 4px;
             }
             
             ::-webkit-scrollbar-thumb {
-              background: #444;
+              background: #4b5563;
               border-radius: 4px;
             }
             
             ::-webkit-scrollbar-thumb:hover {
-              background: #555;
+              background: #60a5fa;
             }
           }
           
           /* Apply scrollbar styling to all devices */
           ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
           }
           
           ::-webkit-scrollbar-track {
-            background: #1a1a1a;
+            background: #1f2937;
             border-radius: 4px;
           }
           
           ::-webkit-scrollbar-thumb {
-            background: #444;
+            background: #4b5563;
             border-radius: 4px;
           }
           
           ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: #60a5fa;
           }
           
           /* Add more responsive styles here */
@@ -1092,12 +1233,33 @@ function AudioRecorderPage() {
             }
           }
           
-          @media (min-width: 481px) and (max-width: 767px) {
-            /* Small devices */
+          /* Additional Animation for button hover states, transitions, etc */
+          @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.7; }
           }
           
-          @media (min-width: 768px) and (max-width: 991px) {
-            /* Medium devices (tablets) */
+          @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          
+          /* Ripple effect for buttons */
+          @keyframes ripple {
+            0% {
+              transform: scale(0);
+              opacity: 1;
+            }
+            100% {
+              transform: scale(1.5);
+              opacity: 0;
+            }
+          }
+          
+          /* Smooth transition for all interactive elements */
+          button, a, div[role="button"] {
+            transition: all 0.2s ease-in-out !important;
           }
         `}
       </style>

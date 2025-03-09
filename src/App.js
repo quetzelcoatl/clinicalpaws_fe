@@ -52,6 +52,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/otp-login" element={<OtpLoginPage />} />
         <Route path="/AudioRecorderPage" element={<AudioRecorderPage />} />
+        <Route path="/verify-otp" element={<VerifyOtpPage />} />
       </Routes>
     </Router>
   );

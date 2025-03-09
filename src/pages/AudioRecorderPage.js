@@ -13,7 +13,8 @@ import {
   faSignOutAlt, 
   faHistory,
   faChevronLeft,
-  faChevronRight
+  faChevronRight,
+  faArrowDown
 } from "@fortawesome/free-solid-svg-icons";
 
 function AudioRecorderPage() {
@@ -23,6 +24,9 @@ function AudioRecorderPage() {
   // Recorder-related
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [recordingTime, setRecordingTime] = useState(0);  // Time elapsed in seconds
+  const [timerInterval, setTimerInterval] = useState(null);  // To store the interval ID
+  const MINIMUM_RECORDING_TIME = 10; // Minimum recording time in seconds
 
   // Processing status
   const [isUploading, setIsUploading] = useState(false);
@@ -168,6 +172,14 @@ function AudioRecorderPage() {
 
       setMediaRecorder(recorder);
       setRecording(true);
+      setRecordingTime(0); // Reset timer
+      
+      // Start the timer
+      const interval = setInterval(() => {
+        setRecordingTime(prevTime => prevTime + 1);
+      }, 1000);
+      setTimerInterval(interval);
+      
       recorder.start();
     } catch (err) {
       console.error("Error starting audio recording:", err);
@@ -179,7 +191,13 @@ function AudioRecorderPage() {
   // 4) Stop Recording AND Upload
   // ---------------------------
   const stopRecordingAndUpload = () => {
-    if (!mediaRecorder) return;
+    if (!mediaRecorder || recordingTime < MINIMUM_RECORDING_TIME) return;
+
+    // Clear the timer interval
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      setTimerInterval(null);
+    }
 
     mediaRecorder.onstop = () => {
       const audioData = new Blob(chunksRef.current, { type: "audio/wav" });
@@ -190,7 +208,17 @@ function AudioRecorderPage() {
     mediaRecorder.stop();
     setMediaRecorder(null);
     setRecording(false);
+    setRecordingTime(0); // Reset timer
   };
+
+  // Clean up timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+    };
+  }, [timerInterval]);
 
   // ---------------------------
   // 5) Upload the recorded audio
@@ -319,12 +347,13 @@ function AudioRecorderPage() {
   const handleMicClick = async () => {
     if (!recording) {
       await startRecording();
-    } else {
+    } else if (recordingTime >= MINIMUM_RECORDING_TIME) {
       stopRecordingAndUpload();
     }
   };
 
   const buttonDisabled = (isUploading || isProcessing) && !recording;
+  const stopButtonDisabled = recording && recordingTime < MINIMUM_RECORDING_TIME;
 
   // ---------------------------
   // 9) History (Infinite Scroll)
@@ -381,39 +410,6 @@ function AudioRecorderPage() {
     }
   }, [fetchUserDetails, fetchHistory]);
 
-  // Scroll listener: load next page only if user scrolls down
-  useEffect(() => {
-    const handleScroll = () => {
-      const container = historyPanelRef.current;
-      if (!container) return;
-
-      const currentScrollTop = container.scrollTop;
-
-      // Only if the user scrolled down
-      if (currentScrollTop > lastScrollTopRef.current) {
-        const nearBottomThreshold = 50;
-        // If near bottom, fetch next page
-        if (
-          container.scrollHeight - currentScrollTop <=
-          container.clientHeight + nearBottomThreshold
-        ) {
-          fetchHistory();
-        }
-      }
-      lastScrollTopRef.current = currentScrollTop;
-    };
-
-    const panel = historyPanelRef.current;
-    if (panel) {
-      panel.addEventListener("scroll", handleScroll);
-    }
-    return () => {
-      if (panel) {
-        panel.removeEventListener("scroll", handleScroll);
-      }
-    };
-  }, [fetchHistory]);
-
   // ---------------------------
   // 10) Handling history selection
   // ---------------------------
@@ -428,6 +424,11 @@ function AudioRecorderPage() {
   const getFirstLine = (text) => {
     if (!text) return "No final answer found.";
     return text.split(/\r?\n/)[0].trim();
+  };
+
+  // Handle Load More button click
+  const handleLoadMore = () => {
+    fetchHistory();
   };
 
   // ---------------------------
@@ -453,6 +454,13 @@ function AudioRecorderPage() {
   // Toggle history panel
   const toggleHistoryPanel = () => {
     setShowHistoryPanel(prev => !prev);
+  };
+
+  // Formatting time for display (MM:SS)
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   // ---------------------------
@@ -543,39 +551,74 @@ function AudioRecorderPage() {
               History
             </h3>
             {historyData && historyData.length > 0 ? (
-              historyData.map((item) => {
-                const firstLine = getFirstLine(item.final_answer);
-                const isSelected = selectedHistoryItem && selectedHistoryItem.id === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => handleHistoryItemClick(item)}
-                    style={{
-                      padding: isMobile ? "12px" : "14px",
-                      marginBottom: "10px",
-                      border: isSelected ? "none" : "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: "12px",
-                      backgroundColor: isSelected ? "#3B82F6" : "rgba(255,255,255,0.03)",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      boxShadow: isSelected 
-                        ? "0 4px 12px rgba(59, 130, 246, 0.3)" 
-                        : "0 2px 4px rgba(0,0,0,0.1)",
-                      transition: "all 0.2s ease",
-                      fontSize: isMobile ? "13px" : "14px",
-                      minHeight: isMobile ? "44px" : "auto",
-                      display: "flex",
-                      alignItems: "center",
-                      color: isSelected ? "#ffffff" : "#e2e8f0",
-                      transform: isSelected ? "translateY(-1px)" : "none",
-                    }}
-                  >
-                    {firstLine}
+              <>
+                {historyData.map((item) => {
+                  const firstLine = getFirstLine(item.final_answer);
+                  const isSelected = selectedHistoryItem && selectedHistoryItem.id === item.id;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleHistoryItemClick(item)}
+                      style={{
+                        padding: isMobile ? "12px 0" : "14px 0",
+                        marginBottom: "10px",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        transition: "all 0.2s ease",
+                        fontSize: isMobile ? "13px" : "14px",
+                        minHeight: isMobile ? "44px" : "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        color: isSelected ? "#60A5FA" : "#e2e8f0",
+                        borderBottom: "1px solid rgba(255,255,255,0.03)",
+                      }}
+                    >
+                      {firstLine}
+                    </div>
+                  );
+                })}
+                
+                {/* Load More Button */}
+                {hasMore && (
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    marginTop: "20px",
+                    marginBottom: "10px",
+                  }}>
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={isLoadingHistory}
+                      style={{
+                        padding: "10px 20px",
+                        borderRadius: "12px",
+                        background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+                        color: "#ffffff",
+                        border: "none",
+                        cursor: isLoadingHistory ? "not-allowed" : "pointer",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.3s ease",
+                        boxShadow: "0 4px 6px rgba(59, 130, 246, 0.25)",
+                        opacity: isLoadingHistory ? 0.7 : 1,
+                        position: "relative",
+                        overflow: "hidden",
+                        width: isMobile ? "90%" : "200px",
+                      }}
+                    >
+                      {isLoadingHistory ? "Loading..." : "Load More"}
+                      
+                      {/* Add ripple effect to button */}
+                      <span className="ripple-effect"></span>
+                    </button>
                   </div>
-                );
-              })
+                )}
+              </>
             ) : (
               <p style={{ 
                 color: "#94a3b8", 
@@ -834,21 +877,21 @@ function AudioRecorderPage() {
                 height: isMobile ? "100px" : "130px",
                 borderRadius: "50%",
                 background: recording 
-                  ? "linear-gradient(135deg, #ef4444, #dc2626)" // Red gradient when recording
+                  ? (stopButtonDisabled ? "#9CA3AF" : "linear-gradient(135deg, #ef4444, #dc2626)") // Gray when disabled, red when recording
                   : "linear-gradient(135deg, #3B82F6, #2563EB)", // Blue gradient when ready
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: buttonDisabled ? "not-allowed" : "pointer",
+                cursor: buttonDisabled || stopButtonDisabled ? "not-allowed" : "pointer",
                 boxShadow: recording 
-                  ? "0 8px 20px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.2)" 
+                  ? (stopButtonDisabled ? "0 8px 20px rgba(156, 163, 175, 0.3)" : "0 8px 20px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.2)")
                   : "0 8px 20px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.2)",
                 transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                opacity: buttonDisabled ? 0.7 : 1,
-                transform: buttonDisabled ? "none" : "translateY(0)",
-                "&:hover": { // This won't directly work in inline styles but I'm including for documentation
-                  transform: buttonDisabled ? "none" : "translateY(-3px)",
-                  boxShadow: recording
+                opacity: buttonDisabled || stopButtonDisabled ? 0.7 : 1,
+                transform: buttonDisabled || stopButtonDisabled ? "none" : "translateY(0)",
+                "&:hover": {
+                  transform: buttonDisabled || stopButtonDisabled ? "none" : "translateY(-3px)",
+                  boxShadow: recording && !stopButtonDisabled
                     ? "0 12px 28px rgba(239, 68, 68, 0.35), 0 0 0 2px rgba(239, 68, 68, 0.25)"
                     : "0 12px 28px rgba(59, 130, 246, 0.35), 0 0 0 2px rgba(59, 130, 246, 0.25)"
                 },
@@ -856,7 +899,7 @@ function AudioRecorderPage() {
               }}
             >
               {/* Pulse animation for recording state */}
-              {recording && (
+              {recording && !stopButtonDisabled && (
                 <div style={{
                   position: "absolute",
                   width: "100%",
@@ -875,16 +918,40 @@ function AudioRecorderPage() {
                 }}
               />
             </div>
+            
+            {/* Recording Timer */}
+            {recording && (
+              <div
+                style={{
+                  marginTop: "15px",
+                  fontSize: isMobile ? "18px" : "22px",
+                  color: recordingTime < MINIMUM_RECORDING_TIME ? "#F87171" : "#60A5FA",
+                  fontWeight: "600",
+                  fontFamily: "monospace",
+                  letterSpacing: "1px",
+                  animation: recordingTime < MINIMUM_RECORDING_TIME ? "pulse 1s infinite" : "none",
+                }}
+              >
+                {formatTime(recordingTime)}
+              </div>
+            )}
+            
             <div
               style={{
-                marginTop: "20px",
+                marginTop: recording ? "10px" : "20px",
                 fontSize: isMobile ? "15px" : "17px",
                 color: "#e2e8f0",
                 fontWeight: "500",
                 textAlign: "center",
               }}
             >
-              {recording ? "Tap to Stop Recording" : isProcessing ? "Processing..." : "Tap to Start Recording"}
+              {recording 
+                ? (recordingTime < MINIMUM_RECORDING_TIME 
+                   ? `Recording... (${MINIMUM_RECORDING_TIME - recordingTime}s remaining)` 
+                   : "Tap to Stop Recording")
+                : isProcessing 
+                  ? "Processing..." 
+                  : "Tap to Start Recording"}
             </div>
           </div>
 
@@ -892,18 +959,13 @@ function AudioRecorderPage() {
             <div
               style={{
                 marginTop: "20px",
-                padding: isMobile ? "12px 18px" : "16px 24px",
-                backgroundColor: "rgba(59, 130, 246, 0.1)",
-                borderRadius: "12px",
+                padding: isMobile ? "12px 0" : "16px 0",
                 color: "#60A5FA",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                border: "1px solid rgba(59, 130, 246, 0.15)",
                 width: isMobile ? "90%" : "auto",
                 maxWidth: "500px",
-                backdropFilter: "blur(8px)",
                 fontWeight: "500",
               }}
             >
@@ -931,6 +993,11 @@ function AudioRecorderPage() {
                   0% { opacity: 0; transform: translateY(-10px); }
                   100% { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes timerPulse {
+                  0% { opacity: 1; }
+                  50% { opacity: 0.5; }
+                  100% { opacity: 1; }
+                }
                 `}
               </style>
               Processing your audio...
@@ -942,13 +1009,9 @@ function AudioRecorderPage() {
             <div
               style={{
                 marginTop: "25px",
-                padding: isMobile ? "24px" : "32px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "16px",
-                backgroundColor: "#1f2937",
+                padding: isMobile ? "24px 0" : "32px 0",
                 maxWidth: "900px",
                 width: "100%",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
                 overflowX: "hidden",
                 animation: "fadeIn 0.3s ease-out",
               }}
@@ -1045,13 +1108,9 @@ function AudioRecorderPage() {
                 <div
                   style={{
                     marginTop: "25px",
-                    padding: isMobile ? "24px" : "32px",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "16px",
-                    backgroundColor: "#1f2937",
+                    padding: isMobile ? "24px 0" : "32px 0",
                     maxWidth: "900px",
                     width: "100%",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
                     overflowX: "hidden",
                     animation: "fadeIn 0.3s ease-out",
                   }}
@@ -1260,6 +1319,27 @@ function AudioRecorderPage() {
           /* Smooth transition for all interactive elements */
           button, a, div[role="button"] {
             transition: all 0.2s ease-in-out !important;
+          }
+          
+          /* Ripple effect for Load More button */
+          .ripple-effect {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+          }
+          
+          button:hover {
+            background: linear-gradient(135deg, #4B91FF, #3570E3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+          }
+          
+          button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 3px rgba(59, 130, 246, 0.2);
           }
         `}
       </style>

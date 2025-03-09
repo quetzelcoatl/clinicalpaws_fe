@@ -9,6 +9,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import OtpLoginPage from "./pages/OtpLoginPage";
+import VerifyOtpPage from "./pages/VerifyOtpPage";
 import AudioRecorderPage from "./pages/AudioRecorderPage";
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/VerifyOtpPage" element={<VerifyOtpPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/otp-login" element={<OtpLoginPage />} />
         <Route path="/AudioRecorderPage" element={<AudioRecorderPage />} />

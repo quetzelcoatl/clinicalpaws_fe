@@ -439,7 +439,8 @@ function AudioRecorderPage() {
   };
 
   const handleMyProfile = () => {
-    alert("Navigating to My Profile...");
+    // Navigate to profile page instead of showing alert
+    navigate("/profile");
   };
 
   const handleSettings = () => {

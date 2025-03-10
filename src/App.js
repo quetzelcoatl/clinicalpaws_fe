@@ -11,6 +11,9 @@ import SignupPage from "./pages/SignupPage";
 import OtpLoginPage from "./pages/OtpLoginPage";
 import VerifyOtpPage from "./pages/VerifyOtpPage";
 import AudioRecorderPage from "./pages/AudioRecorderPage";
+import ForgotPassword from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   useEffect(() => {
@@ -53,6 +56,9 @@ function App() {
         <Route path="/otp-login" element={<OtpLoginPage />} />
         <Route path="/AudioRecorderPage" element={<AudioRecorderPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/resetpassword" element={<ResetPasswordPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
       <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     </Router>

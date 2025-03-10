@@ -59,6 +59,12 @@ function LoginPage() {
             required
           />
 
+          <div className="forgot-password-container">
+            <Link to="/forgot-password" className="auth-footer-link">
+              Forgot password?
+            </Link>
+          </div>
+
           <button type="submit" className="auth-button">
             Log in
           </button>
@@ -71,7 +77,7 @@ function LoginPage() {
         </div>
 
         <div className="auth-footer-text">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <Link to="/signup" className="auth-footer-link">
             Sign up
           </Link>

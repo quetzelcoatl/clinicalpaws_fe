@@ -160,7 +160,7 @@ const AuthService = {
    * 8) reset_password_link
    *    Endpoint: POST /api/signup/reset_password_link
    */
-  resetPasswordLink: async (email) => {
+  requestPasswordReset: async (email) => {
     const url = `${BASE_URL}/reset_password_link?email=${encodeURIComponent(
       email
     )}`;
@@ -173,7 +173,19 @@ const AuthService = {
   /**
    * 9) set_password
    *    Endpoint: POST /api/signup/set_password
-   */
+
+  setPassword: async (email, reset_id, new_password) => {
+    const url = `${BASE_URL}/set_password?email=${encodeURIComponent(
+      email
+    )}&reset_id=${encodeURIComponent(
+      reset_id
+    )}&new_password=${encodeURIComponent(new_password)}`;
+    const response = await fetch(url, {
+      method: "POST",
+    });
+    return handleResponse(response);
+  }, */
+
   setPassword: async (email, reset_id, new_password) => {
     const url = `${BASE_URL}/set_password?email=${encodeURIComponent(
       email
@@ -185,6 +197,8 @@ const AuthService = {
     });
     return handleResponse(response);
   },
+
+
 };
 
 export default AuthService;

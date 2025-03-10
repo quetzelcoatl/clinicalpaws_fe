@@ -476,23 +476,25 @@ function AudioRecorderPage() {
         fontFamily: "'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
         color: "#f3f4f6", // Lighter text for better contrast
         flexDirection: isMobile ? "column" : "row",
-        overflow: "hidden",
+        overflow: "auto", // Changed from "hidden" to "auto"
         width: "100%",
       }}
     >
       {/* Left-side: History Panel */}
       <div
         style={{
-          width: showHistoryPanel 
+          width: showHistoryPanel
             ? isMobile ? "100%" : "300px" // Slightly wider for better reading
             : "0",
           borderRight: !isMobile && "1px solid rgba(255,255,255,0.08)",
           borderBottom: isMobile && showHistoryPanel && "1px solid rgba(255,255,255,0.08)",
           backgroundColor: "#1f2937", // Lighter than main background
-          overflowY: "hidden",
+          overflowY: "hidden", // Changed from auto to hidden - container shouldn't scroll
           height: isMobile ? (showHistoryPanel ? "50vh" : "0") : "100vh",
           transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)", // Smooth easing
-          position: isMobile ? "absolute" : "relative",
+          position: isMobile ? "absolute" : "fixed", // Changed from relative to fixed for desktop
+          top: 0, // Fixed position needs positioning coordinates
+          left: 0,
           display: "flex",
           flexDirection: "column",
           zIndex: isMobile ? "200" : "100",
@@ -502,27 +504,27 @@ function AudioRecorderPage() {
       >
         {/* Logo/Brand at the top of the sidebar - Only show when panel is visible */}
         {showHistoryPanel && (
-          <div style={{ 
-            padding: "20px", 
+          <div style={{
+            padding: "20px",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
             display: "flex",
             alignItems: "center"
           }}>
-            <div style={{ 
-              fontWeight: "600", 
-              fontSize: isMobile ? "16px" : "20px", 
+            <div style={{
+              fontWeight: "600",
+              fontSize: isMobile ? "16px" : "20px",
               color: "#60A5FA", // Brighter blue
               display: "flex",
               alignItems: "center",
               letterSpacing: "0.5px"
             }}>
-              <FontAwesomeIcon 
-                icon={faMicrophone} 
-                style={{ 
-                  marginRight: "12px", 
+              <FontAwesomeIcon
+                icon={faMicrophone}
+                style={{
+                  marginRight: "12px",
                   color: "#60A5FA",
                   fontSize: isMobile ? "16px" : "18px"
-                }} 
+                }}
               />
               Clinical Paws
             </div>
@@ -535,14 +537,17 @@ function AudioRecorderPage() {
             style={{
               padding: isMobile ? "1rem" : "1.5rem",
               overflowY: "auto",
-              height: "100%",
+              height: "100%", 
               flex: 1,
               WebkitOverflowScrolling: "touch",
+              position: "relative",
+              scrollbarWidth: "thin",
+              scrollbarColor: "#4b5563 #1f2937", // Firefox scrollbar colors
             }}
           >
-            <h3 style={{ 
-              marginTop: 0, 
-              color: "#f3f4f6", 
+            <h3 style={{
+              marginTop: 0,
+              color: "#f3f4f6",
               fontSize: isMobile ? "16px" : "18px",
               borderBottom: "1px solid rgba(255,255,255,0.1)",
               paddingBottom: "12px",
@@ -579,7 +584,7 @@ function AudioRecorderPage() {
                     </div>
                   );
                 })}
-                
+
                 {/* Load More Button */}
                 {hasMore && (
                   <div style={{
@@ -612,7 +617,7 @@ function AudioRecorderPage() {
                       }}
                     >
                       {isLoadingHistory ? "Loading..." : "Load More"}
-                      
+
                       {/* Add ripple effect to button */}
                       <span className="ripple-effect"></span>
                     </button>
@@ -620,19 +625,19 @@ function AudioRecorderPage() {
                 )}
               </>
             ) : (
-              <p style={{ 
-                color: "#94a3b8", 
+              <p style={{
+                color: "#94a3b8",
                 textAlign: "center",
                 padding: "20px 0",
-                fontSize: "14px" 
+                fontSize: "14px"
               }}>
                 No history found.
               </p>
             )}
 
             {isLoadingHistory && (
-              <p style={{ 
-                color: "#94a3b8", 
+              <p style={{
+                color: "#94a3b8",
                 textAlign: "center",
                 fontStyle: "italic",
                 fontSize: "14px"
@@ -644,13 +649,13 @@ function AudioRecorderPage() {
         )}
       </div>
 
-      {/* History Toggle Button - Positioned differently based on device */}
+      {/* History Toggle Button - Positioning adjustment */}
       <div
         onClick={toggleHistoryPanel}
         style={{
-          position: "absolute",
+          position: "fixed", // Changed from absolute to fixed
           top: isMobile ? "70px" : "50%",
-          left: isMobile 
+          left: isMobile
             ? "10px"
             : (showHistoryPanel ? "284px" : "0"),
           width: "44px",
@@ -674,23 +679,24 @@ function AudioRecorderPage() {
           }
         }}
       >
-        <FontAwesomeIcon 
-          icon={showHistoryPanel ? faChevronLeft : faChevronRight} 
-          style={{ color: "#e2e8f0" }} 
+        <FontAwesomeIcon
+          icon={showHistoryPanel ? faChevronLeft : faChevronRight}
+          style={{ color: "#e2e8f0" }}
         />
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content Area - adjust margin when history panel is visible */}
       <div
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          height: "100vh",
           position: "relative",
           width: "100%",
-          overflow: isMobile ? "visible" : "hidden",
+          overflow: "visible", // Changed from "hidden" to "visible"
           backdropFilter: "blur(5px)", // Subtle effect when elements overlap
+          marginLeft: !isMobile && showHistoryPanel ? "300px" : "0", // Add margin to make room for fixed history panel
+          transition: "margin-left 0.4s cubic-bezier(0.16, 1, 0.3, 1)", // Smooth transition for margin
         }}
       >
         {/* Top Navigation Bar */}
@@ -711,19 +717,19 @@ function AudioRecorderPage() {
         >
           {/* Empty div for spacing or logo if needed */}
           <div style={{ width: "40px" }}></div>
-          
+
           {/* Title for mobile (centered) */}
           {isMobile && (
-            <div style={{ 
-              fontWeight: "600", 
-              fontSize: "18px", 
+            <div style={{
+              fontWeight: "600",
+              fontSize: "18px",
               color: "#60A5FA",
               letterSpacing: "0.5px"
             }}>
               Clinical Paws
             </div>
           )}
-          
+
           {/* Profile Section - always on the right */}
           <div style={{ position: "relative" }}>
             <div
@@ -849,14 +855,14 @@ function AudioRecorderPage() {
             justifyContent: "flex-start",
             padding: isMobile ? "1.5rem 1rem" : "2rem",
             backgroundColor: "#111827", // Main dark blue-gray background
-            overflowY: "auto",
-            WebkitOverflowScrolling: "touch",
             width: "100%",
             boxSizing: "border-box",
             paddingRight: isMobile ? "1rem" : "2rem",
             backgroundImage: "radial-gradient(ellipse at top, rgba(59, 130, 246, 0.08), transparent 80%)",
             backgroundSize: "100% 1000px",
             backgroundRepeat: "no-repeat",
+            overflowY: "auto", // Add this to enable scrolling
+            overflowX: "hidden", // Prevent horizontal scrolling
           }}
         >
           {/* Microphone Button with Circle */}
@@ -876,14 +882,14 @@ function AudioRecorderPage() {
                 width: isMobile ? "100px" : "130px",
                 height: isMobile ? "100px" : "130px",
                 borderRadius: "50%",
-                background: recording 
+                background: recording
                   ? (stopButtonDisabled ? "#9CA3AF" : "linear-gradient(135deg, #ef4444, #dc2626)") // Gray when disabled, red when recording
                   : "linear-gradient(135deg, #3B82F6, #2563EB)", // Blue gradient when ready
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: buttonDisabled || stopButtonDisabled ? "not-allowed" : "pointer",
-                boxShadow: recording 
+                boxShadow: recording
                   ? (stopButtonDisabled ? "0 8px 20px rgba(156, 163, 175, 0.3)" : "0 8px 20px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.2)")
                   : "0 8px 20px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.2)",
                 transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -918,7 +924,7 @@ function AudioRecorderPage() {
                 }}
               />
             </div>
-            
+
             {/* Recording Timer */}
             {recording && (
               <div
@@ -935,7 +941,7 @@ function AudioRecorderPage() {
                 {formatTime(recordingTime)}
               </div>
             )}
-            
+
             <div
               style={{
                 marginTop: recording ? "10px" : "20px",
@@ -945,12 +951,12 @@ function AudioRecorderPage() {
                 textAlign: "center",
               }}
             >
-              {recording 
-                ? (recordingTime < MINIMUM_RECORDING_TIME 
-                   ? `Recording... (${MINIMUM_RECORDING_TIME - recordingTime}s remaining)` 
+              {recording
+                ? (recordingTime < MINIMUM_RECORDING_TIME
+                   ? `Recording... (${MINIMUM_RECORDING_TIME - recordingTime}s remaining)`
                    : "Tap to Stop Recording")
-                : isProcessing 
-                  ? "Processing..." 
+                : isProcessing
+                  ? "Processing..."
                   : "Tap to Start Recording"}
             </div>
           </div>
@@ -1017,27 +1023,27 @@ function AudioRecorderPage() {
               }}
             >
               {/* Transcribed Text - Now First */}
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
+              <div style={{
+                display: "flex",
+                alignItems: "center",
                 marginBottom: "18px",
                 borderBottom: "1px solid rgba(255,255,255,0.08)",
                 paddingBottom: "14px"
               }}>
-                <h3 style={{ 
-                  margin: 0, 
-                  color: "#f3f4f6", 
+                <h3 style={{
+                  margin: 0,
+                  color: "#f3f4f6",
                   fontSize: isMobile ? "17px" : "19px",
                   fontWeight: "600",
                   letterSpacing: "0.3px"
                 }}>Transcribed Text</h3>
               </div>
-              
+
               {selectedHistoryItem.transcribed_text ? (
-                <p style={{ 
-                  color: "#d1d5db", 
-                  lineHeight: "1.8", 
-                  fontSize: isMobile ? "15px" : "16px", 
+                <p style={{
+                  color: "#d1d5db",
+                  lineHeight: "1.8",
+                  fontSize: isMobile ? "15px" : "16px",
                   marginBottom: "35px",
                   padding: "0 0 16px 0",
                   borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -1046,17 +1052,17 @@ function AudioRecorderPage() {
                   letterSpacing: "0.2px"
                 }}>{selectedHistoryItem.transcribed_text}</p>
               ) : (
-                <p style={{ 
-                  color: "#94a3b8", 
+                <p style={{
+                  color: "#94a3b8",
                   marginBottom: "35px",
                   fontStyle: "italic"
                 }}>No transcription data found.</p>
               )}
 
               {/* Final Answer - Now Second */}
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
+              <div style={{
+                display: "flex",
+                alignItems: "center",
                 marginBottom: "18px",
                 borderBottom: "1px solid rgba(255,255,255,0.08)",
                 paddingBottom: "14px"
@@ -1074,19 +1080,19 @@ function AudioRecorderPage() {
                 }}>
                   <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "15px" }} />
                 </div>
-                <h3 style={{ 
-                  margin: 0, 
-                  color: "#f3f4f6", 
+                <h3 style={{
+                  margin: 0,
+                  color: "#f3f4f6",
                   fontSize: isMobile ? "17px" : "19px",
                   fontWeight: "600",
                   letterSpacing: "0.3px"
                 }}>Final Answer</h3>
               </div>
-              
+
               {selectedHistoryItem.final_answer ? (
-                <div style={{ 
-                  lineHeight: "1.8", 
-                  color: "#f3f4f6", 
+                <div style={{
+                  lineHeight: "1.8",
+                  color: "#f3f4f6",
                   fontSize: isMobile ? "15px" : "16px",
                   letterSpacing: "0.2px",
                   overflow: "auto",
@@ -1096,9 +1102,9 @@ function AudioRecorderPage() {
                   <ReactMarkdown>{selectedHistoryItem.final_answer}</ReactMarkdown>
                 </div>
               ) : (
-                <p style={{ 
+                <p style={{
                   color: "#94a3b8",
-                  fontStyle: "italic" 
+                  fontStyle: "italic"
                 }}>No final answer found.</p>
               )}
             </div>
@@ -1116,27 +1122,27 @@ function AudioRecorderPage() {
                   }}
                 >
                   {/* Transcribed Text - Now First */}
-                  <div style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
                     marginBottom: "18px",
                     borderBottom: "1px solid rgba(255,255,255,0.08)",
                     paddingBottom: "14px"
                   }}>
-                    <h3 style={{ 
-                      margin: 0, 
-                      color: "#f3f4f6", 
+                    <h3 style={{
+                      margin: 0,
+                      color: "#f3f4f6",
                       fontSize: isMobile ? "17px" : "19px",
                       fontWeight: "600",
                       letterSpacing: "0.3px"
                     }}>Transcribed Text</h3>
                   </div>
-                  
+
                   {orderData.transcribed_text ? (
-                    <p style={{ 
-                      color: "#d1d5db", 
-                      lineHeight: "1.8", 
-                      fontSize: isMobile ? "15px" : "16px", 
+                    <p style={{
+                      color: "#d1d5db",
+                      lineHeight: "1.8",
+                      fontSize: isMobile ? "15px" : "16px",
                       marginBottom: "35px",
                       padding: "0 0 16px 0",
                       borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -1145,17 +1151,17 @@ function AudioRecorderPage() {
                       letterSpacing: "0.2px"
                     }}>{orderData.transcribed_text}</p>
                   ) : (
-                    <p style={{ 
-                      color: "#94a3b8", 
+                    <p style={{
+                      color: "#94a3b8",
                       marginBottom: "35px",
                       fontStyle: "italic"
                     }}>No transcription data found.</p>
                   )}
 
                   {/* Final Answer - Now Second */}
-                  <div style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
                     marginBottom: "18px",
                     borderBottom: "1px solid rgba(255,255,255,0.08)",
                     paddingBottom: "14px"
@@ -1173,19 +1179,19 @@ function AudioRecorderPage() {
                     }}>
                       <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "15px" }} />
                     </div>
-                    <h3 style={{ 
-                      margin: 0, 
-                      color: "#f3f4f6", 
+                    <h3 style={{
+                      margin: 0,
+                      color: "#f3f4f6",
                       fontSize: isMobile ? "17px" : "19px",
                       fontWeight: "600",
                       letterSpacing: "0.3px"
                     }}>Final Answer</h3>
                   </div>
-                  
+
                   {orderData.final_answer ? (
-                    <div style={{ 
-                      lineHeight: "1.8", 
-                      color: "#f3f4f6", 
+                    <div style={{
+                      lineHeight: "1.8",
+                      color: "#f3f4f6",
                       fontSize: isMobile ? "15px" : "16px",
                       letterSpacing: "0.2px",
                       overflow: "auto",
@@ -1195,9 +1201,9 @@ function AudioRecorderPage() {
                       <ReactMarkdown>{orderData.final_answer}</ReactMarkdown>
                     </div>
                   ) : (
-                    <p style={{ 
+                    <p style={{
                       color: "#94a3b8",
-                      fontStyle: "italic" 
+                      fontStyle: "italic"
                     }}>No final answer found.</p>
                   )}
                 </div>
@@ -1206,12 +1212,26 @@ function AudioRecorderPage() {
           )}
         </div>
       </div>
-      
+
       {/* Add viewport meta tag for mobile responsiveness */}
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-          
+
+          html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+          }
+
+          #root {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+
           @media (max-width: 768px) {
             body {
               margin: 0;
@@ -1221,89 +1241,63 @@ function AudioRecorderPage() {
               font-family: 'Inter', sans-serif;
             }
           }
-          
-          /* Allow scrolling on mobile devices */
-          @media (max-width: 768px) {
-            html, body {
-              position: relative;
-              width: 100%;
-              height: 100%;
-              overflow-y: auto;
-              overflow-x: hidden;
-              font-family: 'Inter', sans-serif;
-            }
-          }
-          
-          /* Only prevent rubber-band scrolling on desktop */
-          @media (min-width: 769px) {
-            html, body {
-              overflow: auto;
-              width: 100%;
-              height: 100%;
-              font-family: 'Inter', sans-serif;
-            }
-            
-            /* Custom scrollbar styling for all devices */
-            ::-webkit-scrollbar {
-              width: 8px;
-              height: 8px;
-            }
-            
-            ::-webkit-scrollbar-track {
-              background: #1f2937;
-              border-radius: 4px;
-            }
-            
-            ::-webkit-scrollbar-thumb {
-              background: #4b5563;
-              border-radius: 4px;
-            }
-            
-            ::-webkit-scrollbar-thumb:hover {
-              background: #60a5fa;
-            }
-          }
-          
-          /* Apply scrollbar styling to all devices */
+
+          /* Improved scrollbar styling */
           ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
           }
-          
+
           ::-webkit-scrollbar-track {
             background: #1f2937;
             border-radius: 4px;
           }
-          
+
           ::-webkit-scrollbar-thumb {
             background: #4b5563;
             border-radius: 4px;
           }
-          
+
           ::-webkit-scrollbar-thumb:hover {
             background: #60a5fa;
           }
-          
-          /* Add more responsive styles here */
-          @media (max-width: 480px) {
-            /* Extra small devices */
-            body {
-              -webkit-overflow-scrolling: touch;
-            }
+
+          /* Specific scrollbar styling for history panel */
+          .history-panel::-webkit-scrollbar {
+            width: 4px;
           }
-          
+
+          .history-panel::-webkit-scrollbar-track {
+            background: #1f2937;
+          }
+
+          .history-panel::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 10px;
+          }
+
+          .history-panel::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa;
+          }
+
+          /* Apply scrollbar styling to Firefox */
+          * {
+            scrollbar-width: thin;
+            scrollbar-color: #4b5563 #1f2937;
+          }
+
           /* Additional Animation for button hover states, transitions, etc */
           @keyframes pulse {
             0% { transform: scale(0.95); opacity: 0.7; }
             50% { transform: scale(1.05); opacity: 0.3; }
             100% { transform: scale(0.95); opacity: 0.7; }
           }
-          
+
           @keyframes fadeIn {
             0% { opacity: 0; transform: translateY(-10px); }
             100% { opacity: 1; transform: translateY(0); }
           }
-          
+
           /* Ripple effect for buttons */
           @keyframes ripple {
             0% {
@@ -1315,12 +1309,12 @@ function AudioRecorderPage() {
               opacity: 0;
             }
           }
-          
+
           /* Smooth transition for all interactive elements */
           button, a, div[role="button"] {
             transition: all 0.2s ease-in-out !important;
           }
-          
+
           /* Ripple effect for Load More button */
           .ripple-effect {
             position: absolute;
@@ -1330,13 +1324,13 @@ function AudioRecorderPage() {
             transform: scale(0);
             animation: ripple 0.6s linear;
           }
-          
+
           button:hover {
             background: linear-gradient(135deg, #4B91FF, #3570E3);
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
           }
-          
+
           button:active {
             transform: translateY(0);
             box-shadow: 0 2px 3px rgba(59, 130, 246, 0.2);

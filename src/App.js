@@ -3,7 +3,6 @@ import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Cookies from "js-cookie";
 import AuthService from "./services/AuthService";
-import logo from './assets/logo.jpg';
 
 // Pages
 import LandingPage from "./pages/LandingPage";
@@ -55,9 +54,7 @@ function App() {
         <Route path="/AudioRecorderPage" element={<AudioRecorderPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
       </Routes>
-      <img src={logo} alt="Company Logo" />
       <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-      <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     </Router>
   );
 }

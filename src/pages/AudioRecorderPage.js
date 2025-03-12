@@ -14,7 +14,8 @@ import {
   faHistory,
   faChevronLeft,
   faChevronRight,
-  faArrowDown
+  faArrowDown,
+  faChevronDown
 } from "@fortawesome/free-solid-svg-icons";
 
 function AudioRecorderPage() {
@@ -66,6 +67,11 @@ function AudioRecorderPage() {
   // Ref Guard to prevent multiple API calls in development (React Strict Mode)
   // ---------------------------
   const hasFetchedRef = useRef(false);
+
+  // Chat continuity states
+  const [isNewChat, setIsNewChat] = useState(true);
+  const [previousOrderId, setPreviousOrderId] = useState(null);
+  const [currentChatMessages, setCurrentChatMessages] = useState([]);
 
   // ---------------------------
   // Check viewport size for responsive design
@@ -232,13 +238,17 @@ function AudioRecorderPage() {
     try {
       setIsUploading(true);
       setIsProcessing(false);
-      setOrderData(null);
-      setOrderId(null);
-      setSelectedHistoryItem(null); // Clear selected item if uploading a new file
+      
+      // Don't reset order data and order ID if continuing a conversation
+      if (isNewChat) {
+        setOrderData(null);
+        setOrderId(null);
+        setSelectedHistoryItem(null); // Clear selected item if uploading a new file
+      }
 
       const formData = new FormData();
       formData.append("audio_file", blobParam, "recording.wav");
-
+      
       const accessToken = Cookies.get("accessToken");
       if (!accessToken) {
         alert("No access token found, please log in again.");
@@ -246,17 +256,35 @@ function AudioRecorderPage() {
         return;
       }
 
-      const response = await fetch(
-        "https://clinicalpaws.com/api/signup/upload_audio_file",
-        {
-          method: "POST",
-          headers: {
-            token: accessToken,
-            accept: "application/json",
-          },
-          body: formData,
-        }
-      );
+      // Build the URL with query parameters
+      let url = "https://clinicalpaws.com/api/signup/upload_audio_file";
+      
+      // Add query parameters for chat continuity
+      const params = new URLSearchParams();
+      
+      // IMPORTANT: Fix - use actual boolean values instead of strings
+      console.log(previousOrderId)
+      if (!isNewChat && previousOrderId) {
+        params.append("is_new_chat", false); // Changed from "false" to false (boolean)
+        params.append("previous_order_id", previousOrderId);
+        console.log("Continuing conversation with previous_order_id:", previousOrderId);
+      } else {
+        params.append("is_new_chat", true); // Changed from "true" to true (boolean)
+        console.log("Starting new conversation");
+      }
+      
+      // Append the query parameters to the URL
+      url = `${url}?${params.toString()}`;
+      console.log("Request URL:", url);
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          token: accessToken,
+          accept: "application/json",
+        },
+        body: formData,
+      });
 
       const resData = await response.json();
       if (!response.ok) {
@@ -266,6 +294,17 @@ function AudioRecorderPage() {
       // If we get an order_id, start polling for order details
       if (resData.order_id) {
         setOrderId(resData.order_id);
+        
+        // Always update previousOrderId to the latest order_id
+        setPreviousOrderId(resData.order_id);
+        console.log("Setting previousOrderId to:", resData.order_id);
+        
+        // After first message, subsequent messages are part of the same chat
+        if (isNewChat) {
+          setIsNewChat(false);
+          console.log("Setting isNewChat to false for subsequent messages");
+        }
+        
         setIsProcessing(true);
       }
     } catch (err) {
@@ -297,18 +336,39 @@ function AudioRecorderPage() {
           },
         }
       );
-
+      
       const data = await response.json();
       if (response.ok) {
         setOrderData(data);
 
-        // If completed, stop polling
+        // If completed, stop polling and add to current chat messages
         if (data.status === "completed") {
           setIsProcessing(false);
-
+          
           if (pollingIntervalId) {
             clearInterval(pollingIntervalId);
             setPollingIntervalId(null);
+          }
+          
+          // Add the new message to the current chat
+          if (data.transcribed_text && data.final_answer) {
+            // Check if this message is already in the current chat messages to avoid duplicates
+            const messageExists = currentChatMessages.some(msg => 
+              msg.transcribed_text === data.transcribed_text && 
+              msg.final_answer === data.final_answer
+            );
+            
+            if (!messageExists) {
+              setCurrentChatMessages(prev => [
+                ...prev, 
+                {
+                  id: Date.now(), // Temporary ID for UI purposes
+                  transcribed_text: data.transcribed_text,
+                  final_answer: data.final_answer,
+                  timestamp: new Date().toISOString()
+                }
+              ]);
+            }
           }
         }
       } else {
@@ -383,7 +443,18 @@ function AudioRecorderPage() {
       const data = await response.json();
       if (response.ok) {
         const newItems = data.items || [];
-        setHistoryData((prev) => [...prev, ...newItems]);
+        
+        // Process the items to handle nested messages
+        const processedItems = newItems.map(item => {
+          // Add a property to indicate if this item has follow-up messages
+          return {
+            ...item,
+            hasMessages: item.messages && item.messages.length > 0,
+            expanded: false // Add a property to track if messages are expanded
+          };
+        });
+        
+        setHistoryData((prev) => [...prev, ...processedItems]);
 
         // If we got fewer items than the page size, no more data left
         if (newItems.length < data.size) {
@@ -414,16 +485,85 @@ function AudioRecorderPage() {
   // 10) Handling history selection
   // ---------------------------
   const handleHistoryItemClick = (item) => {
-    setSelectedHistoryItem(item);
+    // Check if this is a main conversation or a follow-up message
+    if (item.messages && item.messages.length > 0) {
+      // This is a main conversation with follow-ups
+      // Create a combined view with the main message and all follow-ups
+      const combinedConversation = {
+        ...item,
+        isConversationThread: true,
+        thread: [
+          {
+            id: item.id,
+            transcribed_text: item.transcribed_text,
+            final_answer: item.final_answer,
+            created_at: item.created_at,
+            status: item.status
+          },
+          ...item.messages.map(msg => ({
+            id: msg.id,
+            transcribed_text: msg.transcribed_text,
+            final_answer: msg.final_answer,
+            created_at: msg.created_at,
+            status: msg.status
+          }))
+        ]
+      };
+      setSelectedHistoryItem(combinedConversation);
+      
+      // Set previousOrderId to the latest message's id in the conversation
+      // This will be either the last follow-up message id or the main message id if no follow-ups
+      const latestMessageId = item.messages.length > 0 
+        ? item.messages[item.messages.length - 1].id 
+        : item.id;
+      
+      setPreviousOrderId(latestMessageId);
+      setIsNewChat(false); // Set to false since we're continuing an existing conversation
+      console.log("Setting previousOrderId to latest in thread:", latestMessageId);
+    } else {
+      // This is either a single message or a follow-up message selected directly
+      setSelectedHistoryItem(item);
+      
+      // Set previousOrderId to this message's id
+      setPreviousOrderId(item.id);
+      setIsNewChat(false); // Set to false since we're continuing an existing conversation
+      console.log("Setting previousOrderId to selected item:", item.id);
+    }
+    
     // On mobile, close the history panel after selection
     if (isMobile) {
       setShowHistoryPanel(false);
     }
   };
 
+  // New function to toggle message expansion
+  const toggleMessageExpansion = (itemId) => {
+    setHistoryData(prev => 
+      prev.map(item => 
+        item.id === itemId 
+          ? { ...item, expanded: !item.expanded } 
+          : item
+      )
+    );
+  };
+
   const getFirstLine = (text) => {
     if (!text) return "No final answer found.";
     return text.split(/\r?\n/)[0].trim();
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString || dateString === "0001-01-01T00:00:00") return "Processing...";
+    
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   // Handle Load More button click
@@ -462,6 +602,21 @@ function AudioRecorderPage() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // ---------------------------
+  // New Chat Button Handler
+  // ---------------------------
+  const handleNewChat = () => {
+    // Only reset everything if we're not already in a new chat state
+    if (!isNewChat || currentChatMessages.length > 0 || selectedHistoryItem) {
+      setIsNewChat(true);
+      setPreviousOrderId(null);
+      setCurrentChatMessages([]);
+      setOrderData(null);
+      setOrderId(null);
+      setSelectedHistoryItem(null); // Clear the selected history item when starting a new chat
+    }
   };
 
   // ---------------------------
@@ -560,28 +715,51 @@ function AudioRecorderPage() {
               <>
                 {historyData.map((item) => {
                   const firstLine = getFirstLine(item.final_answer);
-                  const isSelected = selectedHistoryItem && selectedHistoryItem.id === item.id;
+                  const isSelected = selectedHistoryItem && 
+                    (selectedHistoryItem.id === item.id || 
+                     (selectedHistoryItem.isConversationThread && selectedHistoryItem.thread[0].id === item.id));
+                  
                   return (
-                    <div
-                      key={item.id}
-                      onClick={() => handleHistoryItemClick(item)}
-                      style={{
-                        padding: isMobile ? "12px 0" : "14px 0",
-                        marginBottom: "10px",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        transition: "all 0.2s ease",
-                        fontSize: isMobile ? "13px" : "14px",
-                        minHeight: isMobile ? "44px" : "auto",
-                        display: "flex",
-                        alignItems: "center",
-                        color: isSelected ? "#60A5FA" : "#e2e8f0",
-                        borderBottom: "1px solid rgba(255,255,255,0.03)",
-                      }}
-                    >
-                      {firstLine}
+                    <div key={item.id}>
+                      <div
+                        onClick={() => handleHistoryItemClick(item)}
+                        style={{
+                          padding: isMobile ? "12px 0" : "14px 0",
+                          marginBottom: "10px",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          transition: "all 0.2s ease",
+                          fontSize: isMobile ? "13px" : "14px",
+                          minHeight: isMobile ? "44px" : "auto",
+                          display: "flex",
+                          alignItems: "center",
+                          color: isSelected ? "#60A5FA" : "#e2e8f0",
+                          borderBottom: "1px solid rgba(255,255,255,0.03)",
+                        }}
+                      >
+                        <div style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {firstLine}
+                          {item.hasMessages && (
+                            <span style={{ 
+                              marginLeft: "8px", 
+                              fontSize: "11px", 
+                              color: "#60A5FA",
+                              fontStyle: "italic"
+                            }}>
+                              ({item.messages.length} follow-up{item.messages.length > 1 ? 's' : ''})
+                            </span>
+                          )}
+                          <div style={{ 
+                            fontSize: "11px", 
+                            color: "#9CA3AF", 
+                            marginTop: "4px" 
+                          }}>
+                            {formatDate(item.created_at)}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -716,8 +894,29 @@ function AudioRecorderPage() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          {/* Empty div for spacing or logo if needed */}
-          <div style={{ width: "40px" }}></div>
+          {/* New Chat Button */}
+          <button
+            onClick={handleNewChat}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              background: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem)
+                ? "rgba(59, 130, 246, 0.2)" 
+                : "linear-gradient(135deg, #3B82F6, #2563EB)",
+              color: "#ffffff",
+              border: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "1px solid #3B82F6" : "none",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.3s ease",
+              boxShadow: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "none" : "0 2px 4px rgba(59, 130, 246, 0.25)",
+            }}
+          >
+            {(isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "New Chat" : "Start New Chat"}
+          </button>
 
           {/* Title for mobile (centered) */}
           {isMobile && (
@@ -866,6 +1065,24 @@ function AudioRecorderPage() {
             overflowX: "hidden", // Prevent horizontal scrolling
           }}
         >
+          {/* Chat Status Indicator */}
+          {!isNewChat && previousOrderId && (
+            <div style={{
+              padding: "8px 16px",
+              borderRadius: "20px",
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              color: "#60A5FA",
+              fontSize: "14px",
+              marginBottom: "20px",
+              display: "flex",
+              alignItems: "center",
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+            }}>
+              <span style={{ marginRight: "8px" }}>●</span>
+              Continuing conversation
+            </div>
+          )}
+
           {/* Microphone Button with Circle */}
           <div
             style={{
@@ -1011,8 +1228,8 @@ function AudioRecorderPage() {
             </div>
           )}
 
-          {/* Show either a selected history item or newly recorded result */}
-          {selectedHistoryItem ? (
+          {/* Current Chat Messages */}
+          {currentChatMessages.length > 0 && (
             <div
               style={{
                 marginTop: "25px",
@@ -1023,7 +1240,6 @@ function AudioRecorderPage() {
                 animation: "fadeIn 0.3s ease-out",
               }}
             >
-              {/* Transcribed Text - Now First */}
               <div style={{
                 display: "flex",
                 alignItems: "center",
@@ -1037,91 +1253,233 @@ function AudioRecorderPage() {
                   fontSize: isMobile ? "17px" : "19px",
                   fontWeight: "600",
                   letterSpacing: "0.3px"
-                }}>Transcribed Text</h3>
+                }}>Current Conversation</h3>
               </div>
 
-              {selectedHistoryItem.transcribed_text ? (
-                <p style={{
-                  color: "#d1d5db",
-                  lineHeight: "1.8",
-                  fontSize: isMobile ? "15px" : "16px",
-                  marginBottom: "35px",
-                  padding: "0 0 16px 0",
-                  borderBottom: "1px solid rgba(255,255,255,0.06)",
-                  wordBreak: "break-word",
-                  fontWeight: "400",
-                  letterSpacing: "0.2px"
-                }}>{selectedHistoryItem.transcribed_text}</p>
-              ) : (
-                <p style={{
-                  color: "#94a3b8",
-                  marginBottom: "35px",
-                  fontStyle: "italic"
-                }}>No transcription data found.</p>
-              )}
-
-              {/* Final Answer - Now Second */}
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                marginBottom: "18px",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-                paddingBottom: "14px"
-              }}>
-                <div style={{
-                  width: "34px",
-                  height: "34px",
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, #3B82F6, #2563EB)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: "12px",
-                  boxShadow: "0 2px 6px rgba(59, 130, 246, 0.3)",
+              {currentChatMessages.map((message, index) => (
+                <div key={message.id || index} style={{
+                  marginBottom: "30px",
+                  padding: "20px",
+                  borderRadius: "12px",
+                  backgroundColor: "rgba(31, 41, 55, 0.5)",
+                  border: "1px solid rgba(255,255,255,0.05)",
                 }}>
-                  <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "15px" }} />
-                </div>
-                <h3 style={{
-                  margin: 0,
-                  color: "#f3f4f6",
-                  fontSize: isMobile ? "17px" : "19px",
-                  fontWeight: "600",
-                  letterSpacing: "0.3px"
-                }}>Final Answer</h3>
-              </div>
+                  {/* User's transcribed text */}
+                  <div style={{
+                    marginBottom: "15px",
+                    padding: "0 0 15px 0",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                  }}>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "10px",
+                    }}>
+                      <div style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "50%",
+                        background: avatarBgColor,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: "10px",
+                        fontSize: "12px",
+                        color: "#fff",
+                      }}>
+                        {initials}
+                      </div>
+                      <span style={{ fontWeight: "500", color: "#e2e8f0" }}>You</span>
+                    </div>
+                    <p style={{
+                      color: "#d1d5db",
+                      lineHeight: "1.6",
+                      fontSize: "15px",
+                      margin: "0 0 0 40px",
+                      wordBreak: "break-word",
+                    }}>{message.transcribed_text}</p>
+                  </div>
 
-              {selectedHistoryItem.final_answer ? (
-                <div style={{
-                  lineHeight: "1.8",
-                  color: "#f3f4f6",
-                  fontSize: isMobile ? "15px" : "16px",
-                  letterSpacing: "0.2px",
-                  overflow: "auto",
-                  wordBreak: "break-word",
-                  fontWeight: "400"
-                }}>
-                  <ReactMarkdown>{selectedHistoryItem.final_answer}</ReactMarkdown>
+                  {/* AI's response */}
+                  <div>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "10px",
+                    }}>
+                      <div style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: "10px",
+                      }}>
+                        <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "12px" }} />
+                      </div>
+                      <span style={{ fontWeight: "500", color: "#e2e8f0" }}>Clinical Paws</span>
+                    </div>
+                    <div style={{
+                      lineHeight: "1.7",
+                      color: "#f3f4f6",
+                      fontSize: "15px",
+                      margin: "0 0 0 40px",
+                      wordBreak: "break-word",
+                    }}>
+                      <ReactMarkdown>{message.final_answer}</ReactMarkdown>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <p style={{
-                  color: "#94a3b8",
-                  fontStyle: "italic"
-                }}>No final answer found.</p>
-              )}
+              ))}
             </div>
-          ) : (
-            <>
-              {orderData && orderData.status === "completed" && (
-                <div
-                  style={{
-                    marginTop: "25px",
-                    padding: isMobile ? "24px 0" : "32px 0",
-                    maxWidth: "900px",
-                    width: "100%",
-                    overflowX: "hidden",
-                    animation: "fadeIn 0.3s ease-out",
-                  }}
-                >
+          )}
+
+          {/* Show either a selected history item or newly recorded result */}
+          {selectedHistoryItem && (
+            <div
+              style={{
+                marginTop: "25px",
+                padding: isMobile ? "24px 0" : "32px 0",
+                maxWidth: "900px",
+                width: "100%",
+                overflowX: "hidden",
+                animation: "fadeIn 0.3s ease-out",
+              }}
+            >
+              {selectedHistoryItem.isConversationThread ? (
+                // Display conversation thread
+                <>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "18px",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    paddingBottom: "14px"
+                  }}>
+                    <h3 style={{
+                      margin: 0,
+                      color: "#f3f4f6",
+                      fontSize: isMobile ? "17px" : "19px",
+                      fontWeight: "600",
+                      letterSpacing: "0.3px"
+                    }}>Conversation Thread</h3>
+                  </div>
+
+                  {selectedHistoryItem.thread.map((message, index) => (
+                    <div key={message.id} style={{
+                      marginBottom: "30px",
+                      padding: "20px",
+                      borderRadius: "12px",
+                      backgroundColor: "rgba(31, 41, 55, 0.5)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                    }}>
+                      {/* User's transcribed text */}
+                      <div style={{
+                        marginBottom: "15px",
+                        padding: "0 0 15px 0",
+                        borderBottom: "1px solid rgba(255,255,255,0.08)",
+                      }}>
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                          justifyContent: "space-between"
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center" }}>
+                            <div style={{
+                              width: "30px",
+                              height: "30px",
+                              borderRadius: "50%",
+                              background: avatarBgColor,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginRight: "10px",
+                              fontSize: "12px",
+                              color: "#fff",
+                            }}>
+                              {initials}
+                            </div>
+                            <span style={{ fontWeight: "500", color: "#e2e8f0" }}>You</span>
+                          </div>
+                          <span style={{ 
+                            fontSize: "12px", 
+                            color: "#9CA3AF",
+                            fontStyle: "italic"
+                          }}>
+                            {formatDate(message.created_at)}
+                          </span>
+                        </div>
+                        <p style={{
+                          color: "#d1d5db",
+                          lineHeight: "1.6",
+                          fontSize: "15px",
+                          margin: "0 0 0 40px",
+                          wordBreak: "break-word",
+                        }}>{message.transcribed_text}</p>
+                      </div>
+
+                      {/* AI's response */}
+                      {message.final_answer ? (
+                        <div>
+                          <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            marginBottom: "10px",
+                          }}>
+                            <div style={{
+                              width: "30px",
+                              height: "30px",
+                              borderRadius: "50%",
+                              background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginRight: "10px",
+                            }}>
+                              <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "12px" }} />
+                            </div>
+                            <span style={{ fontWeight: "500", color: "#e2e8f0" }}>Clinical Paws</span>
+                          </div>
+                          <div style={{
+                            lineHeight: "1.7",
+                            color: "#f3f4f6",
+                            fontSize: "15px",
+                            margin: "0 0 0 40px",
+                            wordBreak: "break-word",
+                          }}>
+                            <ReactMarkdown>{message.final_answer}</ReactMarkdown>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          color: "#9CA3AF",
+                          fontStyle: "italic",
+                          fontSize: "14px",
+                          marginTop: "10px"
+                        }}>
+                          <div className="spinner" style={{
+                            width: "16px",
+                            height: "16px",
+                            border: "2px solid rgba(59, 130, 246, 0.2)",
+                            borderRadius: "50%",
+                            borderTop: "2px solid #60A5FA",
+                            animation: "spin 1s linear infinite",
+                            marginRight: "10px",
+                          }}></div>
+                          Processing response...
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                // Display single message (existing code)
+                <>
                   {/* Transcribed Text - Now First */}
                   <div style={{
                     display: "flex",
@@ -1139,7 +1497,7 @@ function AudioRecorderPage() {
                     }}>Transcribed Text</h3>
                   </div>
 
-                  {orderData.transcribed_text ? (
+                  {selectedHistoryItem.transcribed_text ? (
                     <p style={{
                       color: "#d1d5db",
                       lineHeight: "1.8",
@@ -1150,7 +1508,7 @@ function AudioRecorderPage() {
                       wordBreak: "break-word",
                       fontWeight: "400",
                       letterSpacing: "0.2px"
-                    }}>{orderData.transcribed_text}</p>
+                    }}>{selectedHistoryItem.transcribed_text}</p>
                   ) : (
                     <p style={{
                       color: "#94a3b8",
@@ -1189,7 +1547,7 @@ function AudioRecorderPage() {
                     }}>Final Answer</h3>
                   </div>
 
-                  {orderData.final_answer ? (
+                  {selectedHistoryItem.final_answer ? (
                     <div style={{
                       lineHeight: "1.8",
                       color: "#f3f4f6",
@@ -1199,7 +1557,7 @@ function AudioRecorderPage() {
                       wordBreak: "break-word",
                       fontWeight: "400"
                     }}>
-                      <ReactMarkdown>{orderData.final_answer}</ReactMarkdown>
+                      <ReactMarkdown>{selectedHistoryItem.final_answer}</ReactMarkdown>
                     </div>
                   ) : (
                     <p style={{
@@ -1207,9 +1565,33 @@ function AudioRecorderPage() {
                       fontStyle: "italic"
                     }}>No final answer found.</p>
                   )}
-                </div>
+                </>
               )}
-            </>
+            </div>
+          )}
+
+          {/* Scroll to bottom button - appears when there are multiple messages */}
+          {currentChatMessages.length > 1 && (
+            <div 
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+              style={{
+                position: "fixed",
+                bottom: "20px",
+                right: "20px",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                backgroundColor: "#3B82F6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 10px rgba(59, 130, 246, 0.4)",
+                zIndex: 100,
+              }}
+            >
+              <FontAwesomeIcon icon={faArrowDown} style={{ color: "#fff" }} />
+            </div>
           )}
         </div>
       </div>

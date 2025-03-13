@@ -60,7 +60,6 @@ function App() {
         <Route path="/resetpassword" element={<ResetPasswordPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>
-      <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     </Router>
   );
 }

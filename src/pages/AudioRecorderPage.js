@@ -15,7 +15,8 @@ import {
   faChevronLeft,
   faChevronRight,
   faArrowDown,
-  faChevronDown
+  faChevronDown,
+  faCrown
 } from "@fortawesome/free-solid-svg-icons";
 
 function AudioRecorderPage() {
@@ -75,6 +76,11 @@ function AudioRecorderPage() {
   const [isNewChat, setIsNewChat] = useState(true);
   const [previousOrderId, setPreviousOrderId] = useState(null);
   const [currentChatMessages, setCurrentChatMessages] = useState([]);
+
+  // Subscription status
+  const [isProUser, setIsProUser] = useState(false);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
 
   // ---------------------------
   // Check viewport size for responsive design
@@ -485,14 +491,55 @@ function AudioRecorderPage() {
     }
   }, [isLoadingHistory, hasMore, page, navigate]);
 
-  // Fetch user details AND the first page of history on mount
+  // ---------------------------
+  // Fetch subscription status
+  // ---------------------------
+  const fetchSubscriptionStatus = useCallback(async () => {
+    try {
+      setIsLoadingSubscription(true);
+      const accessToken = Cookies.get("accessToken");
+      if (!accessToken) {
+        console.error("No access token found");
+        return;
+      }
+
+      const response = await fetch(
+        "https://clinicalpaws.com/api/signup/current",
+        {
+          method: "GET",
+          headers: {
+            token: accessToken,
+            accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error fetching subscription status:", errorData);
+        return;
+      }
+
+      const data = await response.json();
+      setSubscriptionData(data);
+      setIsProUser(data.is_active === true);
+      console.log("Subscription status:", data);
+    } catch (err) {
+      console.error("Error in fetchSubscriptionStatus:", err);
+    } finally {
+      setIsLoadingSubscription(false);
+    }
+  }, []);
+
+  // Fetch user details AND subscription status on mount
   useEffect(() => {
     if (!hasFetchedRef.current) {
       fetchUserDetails();
       fetchHistory();
+      fetchSubscriptionStatus();
       hasFetchedRef.current = true;
     }
-  }, [fetchUserDetails, fetchHistory]);
+  }, [fetchUserDetails, fetchHistory, fetchSubscriptionStatus]);
 
   // ---------------------------
   // 10) Handling history selection
@@ -650,6 +697,11 @@ function AudioRecorderPage() {
       e.preventDefault(); // Prevent default to avoid newline in the input
       handleTextSubmit();
     }
+  };
+
+  // Add Pro version navigation handler
+  const handleProVersion = () => {
+    navigate("/pro-version");
   };
 
   // ---------------------------
@@ -964,118 +1016,149 @@ function AudioRecorderPage() {
             </div>
           )}
 
-          {/* Profile Section - always on the right */}
-          <div style={{ position: "relative" }}>
-            <div
+          {/* Right side buttons container */}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            {/* Pro Version Button - Updated to show status */}
+            <button 
+              onClick={handleProVersion}
               style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${avatarBgColor}, ${avatarBgColor}dd)`, // Subtle gradient
+                padding: "8px 16px",
+                borderRadius: "8px",
+                background: isProUser 
+                  ? "linear-gradient(135deg, #F59E0B, #D97706)" // Gold gradient for active Pro
+                  : "linear-gradient(135deg, #9CA3AF, #6B7280)", // Gray gradient for non-Pro
+                color: "#ffffff",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "600",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#fff",
-                fontWeight: "600",
-                cursor: "pointer",
-                userSelect: "none",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                border: "2px solid rgba(255,255,255,0.1)",
-                transition: "transform 0.2s ease",
-                "&:hover": { // This won't directly work in inline styles but I'm including for documentation
-                  transform: "scale(1.05)"
-                }
+                transition: "all 0.3s ease",
+                boxShadow: isProUser 
+                  ? "0 2px 8px rgba(245, 158, 11, 0.3)" 
+                  : "0 2px 8px rgba(156, 163, 175, 0.3)",
+                gap: "6px",
               }}
-              onClick={toggleProfileMenu}
             >
-              {initials}
-            </div>
-            {showProfileMenu && (
+              <FontAwesomeIcon icon={faCrown} />
+              {!isMobile && (isProUser ? "Pro Active" : "Get Pro")}
+            </button>
+
+            {/* Profile Section */}
+            <div style={{ position: "relative" }}>
               <div
                 style={{
-                  position: "absolute",
-                  top: "55px",
-                  right: 0,
-                  backgroundColor: "#1f2937",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05)",
-                  borderRadius: "12px",
-                  zIndex: 999,
-                  minWidth: isMobile ? "160px" : "200px",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  maxWidth: isMobile ? "calc(100vw - 40px)" : "auto",
-                  animation: "fadeIn 0.2s ease-out", // Animation for menu appearance
-                  overflow: "hidden", // Keep rounded corners on internal elements
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${avatarBgColor}, ${avatarBgColor}dd)`, // Subtle gradient
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                  border: "2px solid rgba(255,255,255,0.1)",
+                  transition: "transform 0.2s ease",
+                  "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                    transform: "scale(1.05)"
+                  }
                 }}
+                onClick={toggleProfileMenu}
               >
-                <div
-                  style={{
-                    padding: "16px 20px",
-                    borderBottom: "1px solid rgba(255,255,255,0.08)",
-                    fontWeight: "600",
-                    color: "#f3f4f6",
-                    wordBreak: "break-word",
-                    fontSize: "15px"
-                  }}
-                >
-                  {userName || "User"}
-                </div>
-                <div
-                  style={{
-                    padding: "12px 20px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    color: "#e2e8f0",
-                    minHeight: "44px",
-                    transition: "background-color 0.15s ease",
-                    "&:hover": { // This won't directly work in inline styles but I'm including for documentation
-                      backgroundColor: "rgba(255,255,255,0.05)"
-                    }
-                  }}
-                  onClick={handleMyProfile}
-                >
-                  <FontAwesomeIcon icon={faUser} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#60A5FA" }} />
-                  <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>My Profile</span>
-                </div>
-                <div
-                  style={{
-                    padding: "12px 20px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    color: "#e2e8f0",
-                    minHeight: "44px",
-                    transition: "background-color 0.15s ease",
-                    "&:hover": { // This won't directly work in inline styles but I'm including for documentation
-                      backgroundColor: "rgba(255,255,255,0.05)"
-                    }
-                  }}
-                  onClick={handleSettings}
-                >
-                  <FontAwesomeIcon icon={faCog} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#60A5FA" }} />
-                  <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>Settings</span>
-                </div>
-                <div
-                  style={{
-                    padding: "12px 20px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    color: "#f87171", // More vibrant red
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
-                    minHeight: "44px",
-                    transition: "background-color 0.15s ease",
-                    "&:hover": { // This won't directly work in inline styles but I'm including for documentation
-                      backgroundColor: "rgba(255,255,255,0.05)"
-                    }
-                  }}
-                  onClick={handleLogout}
-                >
-                  <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#f87171" }} />
-                  <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>Logout</span>
-                </div>
+                {initials}
               </div>
-            )}
+              {showProfileMenu && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "55px",
+                    right: 0,
+                    backgroundColor: "#1f2937",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05)",
+                    borderRadius: "12px",
+                    zIndex: 999,
+                    minWidth: isMobile ? "160px" : "200px",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    maxWidth: isMobile ? "calc(100vw - 40px)" : "auto",
+                    animation: "fadeIn 0.2s ease-out", // Animation for menu appearance
+                    overflow: "hidden", // Keep rounded corners on internal elements
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "16px 20px",
+                      borderBottom: "1px solid rgba(255,255,255,0.08)",
+                      fontWeight: "600",
+                      color: "#f3f4f6",
+                      wordBreak: "break-word",
+                      fontSize: "15px"
+                    }}
+                  >
+                    {userName || "User"}
+                  </div>
+                  <div
+                    style={{
+                      padding: "12px 20px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      color: "#e2e8f0",
+                      minHeight: "44px",
+                      transition: "background-color 0.15s ease",
+                      "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                        backgroundColor: "rgba(255,255,255,0.05)"
+                      }
+                    }}
+                    onClick={handleMyProfile}
+                  >
+                    <FontAwesomeIcon icon={faUser} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#60A5FA" }} />
+                    <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>My Profile</span>
+                  </div>
+                  <div
+                    style={{
+                      padding: "12px 20px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      color: "#e2e8f0",
+                      minHeight: "44px",
+                      transition: "background-color 0.15s ease",
+                      "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                        backgroundColor: "rgba(255,255,255,0.05)"
+                      }
+                    }}
+                    onClick={handleSettings}
+                  >
+                    <FontAwesomeIcon icon={faCog} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#60A5FA" }} />
+                    <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>Settings</span>
+                  </div>
+                  <div
+                    style={{
+                      padding: "12px 20px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      color: "#f87171", // More vibrant red
+                      borderTop: "1px solid rgba(255,255,255,0.08)",
+                      minHeight: "44px",
+                      transition: "background-color 0.15s ease",
+                      "&:hover": { // This won't directly work in inline styles but I'm including for documentation
+                        backgroundColor: "rgba(255,255,255,0.05)"
+                      }
+                    }}
+                    onClick={handleLogout}
+                  >
+                    <FontAwesomeIcon icon={faSignOutAlt} style={{ marginRight: "12px", width: "16px", flexShrink: 0, color: "#f87171" }} />
+                    <span style={{ whiteSpace: "nowrap", fontSize: "14px" }}>Logout</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

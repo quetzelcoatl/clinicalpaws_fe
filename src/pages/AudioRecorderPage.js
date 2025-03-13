@@ -87,6 +87,9 @@ function AudioRecorderPage() {
   // Pro user popup
   const [showProPopup, setShowProPopup] = useState(false);
 
+  // Remaining free uses counter
+  const [remainingFreeUses, setRemainingFreeUses] = useState(null);
+
   // ---------------------------
   // Check viewport size for responsive design
   // ---------------------------
@@ -145,6 +148,12 @@ function AudioRecorderPage() {
       // { data: { user_id, name, email, ... }, code, message, ... }
       if (data?.data?.name) {
         setUserName(data.data.name);
+      }
+      
+      // Set remaining free uses if available in the response
+      if (data?.data?.remaining_free_uses !== undefined) {
+        setRemainingFreeUses(data.data.remaining_free_uses);
+        console.log("Remaining free uses:", data.data.remaining_free_uses);
       }
     } catch (err) {
       console.error("Error in fetchUserDetails:", err);
@@ -715,7 +724,13 @@ function AudioRecorderPage() {
         setShowProPopup(false);
       }, 5000);
     } else {
-      navigate("/pro-version");
+      // For non-Pro users, also show the popup with free uses info
+      setShowProPopup(true);
+      
+      // Auto-hide the popup after 5 seconds
+      setTimeout(() => {
+        setShowProPopup(false);
+      }, 5000);
     }
   };
 
@@ -764,7 +779,8 @@ function AudioRecorderPage() {
             padding: "20px",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
             display: "flex",
-            alignItems: "center"
+            alignItems: "center",
+            justifyContent: "space-between"
           }}>
             <div style={{
               fontWeight: "600",
@@ -784,6 +800,27 @@ function AudioRecorderPage() {
               />
               Clinical Paws
             </div>
+            
+            {/* Remaining Free Uses Counter in History Panel */}
+            {!isProUser && remainingFreeUses !== null && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                borderRadius: "8px",
+                padding: "6px 10px",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+              }}>
+                <span style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "#60A5FA",
+                }}>
+                  {remainingFreeUses} uses left
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -991,6 +1028,52 @@ function AudioRecorderPage() {
         />
       </div>
 
+      {/* Floating Remaining Free Uses Counter - Always visible */}
+      {!isProUser && remainingFreeUses !== null && !showHistoryPanel && (
+        <div
+          style={{
+            position: "fixed",
+            top: isMobile ? "130px" : "120px",
+            left: "10px",
+            backgroundColor: "rgba(31, 41, 55, 0.9)",
+            borderRadius: "8px",
+            padding: "8px 12px",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+            zIndex: "90",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(4px)",
+            animation: "fadeIn 0.3s ease-out",
+            transition: "all 0.3s ease",
+            transform: "translateZ(0)", // Force hardware acceleration for smoother animations
+          }}
+        >
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}>
+            <FontAwesomeIcon 
+              icon={faMicrophone} 
+              style={{ 
+                color: "#60A5FA", 
+                fontSize: "12px" 
+              }} 
+            />
+            <span style={{
+              fontSize: "13px",
+              fontWeight: "600",
+              color: "#60A5FA",
+              whiteSpace: "nowrap",
+            }}>
+              {remainingFreeUses} free uses left
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Area - adjust margin when history panel is visible */}
       <div
         style={{
@@ -1021,18 +1104,13 @@ function AudioRecorderPage() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          {/* Title for desktop (left-aligned) */}
+          {/* Left side: Title for desktop and Free Uses Counter */}
           <div style={{
-            fontWeight: "600",
-            fontSize: "18px",
-            color: "#60A5FA",
-            letterSpacing: "0.5px"
+            display: "flex",
+            alignItems: "center",
+            gap: "16px"
           }}>
-            Clinical Paws
-          </div>
-
-          {/* Title for mobile (centered) */}
-          {isMobile && (
+            {/* Title */}
             <div style={{
               fontWeight: "600",
               fontSize: "18px",
@@ -1041,7 +1119,28 @@ function AudioRecorderPage() {
             }}>
               Clinical Paws
             </div>
-          )}
+            
+            {/* Remaining Free Uses Counter in Top Nav */}
+            {!isProUser && remainingFreeUses !== null && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                borderRadius: "8px",
+                padding: "6px 12px",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+              }}>
+                <span style={{
+                  fontSize: isMobile ? "12px" : "14px",
+                  fontWeight: "600",
+                  color: "#60A5FA",
+                }}>
+                  {isMobile ? `${remainingFreeUses} left` : `${remainingFreeUses} free uses remaining`}
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Right side buttons container */}
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -1904,136 +2003,283 @@ function AudioRecorderPage() {
               <FontAwesomeIcon icon={faTimes} />
             </button>
             
-            {/* Crown icon with animation */}
-            <div 
-              style={{
-                width: "80px",
-                height: "80px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #F59E0B, #D97706)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 20px auto",
-                position: "relative",
-                animation: "pulse 2s infinite",
-              }}
-            >
-              <FontAwesomeIcon 
-                icon={faCrown} 
-                style={{ 
-                  fontSize: "40px", 
-                  color: "#fff",
-                  animation: "float 3s ease-in-out infinite",
-                }} 
-              />
-              
-              {/* Animated particles */}
-              <div className="particles">
-                {[...Array(6)].map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="particle"
-                    style={{
-                      position: "absolute",
-                      width: "10px",
-                      height: "10px",
-                      borderRadius: "50%",
-                      background: "#FFD700",
-                      opacity: 0.8,
-                      animation: `particle${i+1} 2s infinite`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            <h2 
-              style={{
-                textAlign: "center",
-                color: "#F59E0B",
-                fontSize: "24px",
-                fontWeight: "700",
-                margin: "0 0 15px 0",
-                animation: "slideUp 0.5s ease-out",
-              }}
-            >
-              Pro Membership Active
-            </h2>
-            
-            <p 
-              style={{
-                textAlign: "center",
-                color: "#e2e8f0",
-                fontSize: "16px",
-                lineHeight: "1.6",
-                marginBottom: "25px",
-                animation: "slideUp 0.6s ease-out",
-              }}
-            >
-              You're enjoying all the premium features of Clinical Paws Pro! Thank you for your support.
-            </p>
-            
-            {/* Features list */}
-            <div 
-              style={{
-                marginBottom: "25px",
-                animation: "slideUp 0.7s ease-out",
-              }}
-            >
-              {[
-                "Unlimited conversations",
-                "Priority processing",
-                "Advanced clinical insights",
-                "Early access to new features"
-              ].map((feature, index) => (
+            {isProUser ? (
+              // Pro User Content
+              <>
+                {/* Crown icon with animation */}
                 <div 
-                  key={index}
                   style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #F59E0B, #D97706)",
                     display: "flex",
                     alignItems: "center",
-                    marginBottom: "12px",
-                    animation: `slideRight ${0.3 + index * 0.1}s ease-out`,
+                    justifyContent: "center",
+                    margin: "0 auto 20px auto",
+                    position: "relative",
+                    animation: "pulse 2s infinite",
                   }}
                 >
+                  <FontAwesomeIcon 
+                    icon={faCrown} 
+                    style={{ 
+                      fontSize: "40px", 
+                      color: "#fff",
+                      animation: "float 3s ease-in-out infinite",
+                    }} 
+                  />
+                  
+                  {/* Animated particles */}
+                  <div className="particles">
+                    {[...Array(6)].map((_, i) => (
+                      <div 
+                        key={i} 
+                        className="particle"
+                        style={{
+                          position: "absolute",
+                          width: "10px",
+                          height: "10px",
+                          borderRadius: "50%",
+                          background: "#FFD700",
+                          opacity: 0.8,
+                          animation: `particle${i+1} 2s infinite`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <h2 
+                  style={{
+                    textAlign: "center",
+                    color: "#F59E0B",
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    margin: "0 0 15px 0",
+                    animation: "slideUp 0.5s ease-out",
+                  }}
+                >
+                  Pro Membership Active
+                </h2>
+                
+                <p 
+                  style={{
+                    textAlign: "center",
+                    color: "#e2e8f0",
+                    fontSize: "16px",
+                    lineHeight: "1.6",
+                    marginBottom: "25px",
+                    animation: "slideUp 0.6s ease-out",
+                  }}
+                >
+                  You're enjoying all the premium features of Clinical Paws Pro! Thank you for your support.
+                </p>
+                
+                {/* Features list */}
+                <div 
+                  style={{
+                    marginBottom: "25px",
+                    animation: "slideUp 0.7s ease-out",
+                  }}
+                >
+                  {[
+                    "Unlimited conversations",
+                    "Priority processing",
+                    "Advanced clinical insights",
+                    "Early access to new features"
+                  ].map((feature, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                        animation: `slideRight ${0.3 + index * 0.1}s ease-out`,
+                      }}
+                    >
+                      <div 
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          backgroundColor: "rgba(245, 158, 11, 0.2)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: "12px",
+                        }}
+                      >
+                        <FontAwesomeIcon 
+                          icon={faCheck} 
+                          style={{ 
+                            color: "#F59E0B", 
+                            fontSize: "12px" 
+                          }} 
+                        />
+                      </div>
+                      <span style={{ color: "#d1d5db" }}>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Subscription info */}
+                {subscriptionData && subscriptionData.current_period_end && (
                   <div 
                     style={{
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "50%",
-                      backgroundColor: "rgba(245, 158, 11, 0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: "12px",
+                      textAlign: "center",
+                      fontSize: "14px",
+                      color: "#9CA3AF",
+                      marginTop: "20px",
+                      animation: "slideUp 0.8s ease-out",
                     }}
                   >
-                    <FontAwesomeIcon 
-                      icon={faCheck} 
-                      style={{ 
-                        color: "#F59E0B", 
-                        fontSize: "12px" 
-                      }} 
-                    />
+                    Subscription renews on {new Date(subscriptionData.current_period_end * 1000).toLocaleDateString()}
                   </div>
-                  <span style={{ color: "#d1d5db" }}>{feature}</span>
+                )}
+              </>
+            ) : (
+              // Non-Pro User Content
+              <>
+                {/* Limited icon */}
+                <div 
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 20px auto",
+                    position: "relative",
+                  }}
+                >
+                  <FontAwesomeIcon 
+                    icon={faMicrophone} 
+                    style={{ 
+                      fontSize: "40px", 
+                      color: "#fff",
+                    }} 
+                  />
                 </div>
-              ))}
-            </div>
-            
-            {/* Subscription info */}
-            {subscriptionData && subscriptionData.current_period_end && (
-              <div 
-                style={{
-                  textAlign: "center",
-                  fontSize: "14px",
-                  color: "#9CA3AF",
-                  marginTop: "20px",
-                  animation: "slideUp 0.8s ease-out",
-                }}
-              >
-                Subscription renews on {new Date(subscriptionData.current_period_end * 1000).toLocaleDateString()}
-              </div>
+                
+                <h2 
+                  style={{
+                    textAlign: "center",
+                    color: "#3B82F6",
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    margin: "0 0 15px 0",
+                    animation: "slideUp 0.5s ease-out",
+                  }}
+                >
+                  Free Plan
+                </h2>
+                
+                <div
+                  style={{
+                    textAlign: "center",
+                    backgroundColor: "rgba(59, 130, 246, 0.1)",
+                    borderRadius: "12px",
+                    padding: "15px",
+                    marginBottom: "20px",
+                    border: "1px solid rgba(59, 130, 246, 0.2)",
+                    animation: "pulse 2s infinite",
+                  }}
+                >
+                  <span style={{
+                    fontSize: "18px",
+                    fontWeight: "700",
+                    color: "#60A5FA",
+                  }}>
+                    {remainingFreeUses} free uses remaining
+                  </span>
+                </div>
+                
+                <p 
+                  style={{
+                    textAlign: "center",
+                    color: "#e2e8f0",
+                    fontSize: "16px",
+                    lineHeight: "1.6",
+                    marginBottom: "25px",
+                    animation: "slideUp 0.6s ease-out",
+                  }}
+                >
+                  Upgrade to Pro for unlimited access and premium features!
+                </p>
+                
+                {/* Pro features list */}
+                <div 
+                  style={{
+                    marginBottom: "25px",
+                    animation: "slideUp 0.7s ease-out",
+                  }}
+                >
+                  {[
+                    "Unlimited conversations",
+                    "Priority processing",
+                    "Advanced clinical insights",
+                    "Early access to new features"
+                  ].map((feature, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                        animation: `slideRight ${0.3 + index * 0.1}s ease-out`,
+                      }}
+                    >
+                      <div 
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          backgroundColor: "rgba(59, 130, 246, 0.1)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: "12px",
+                        }}
+                      >
+                        <FontAwesomeIcon 
+                          icon={faCheck} 
+                          style={{ 
+                            color: "#3B82F6", 
+                            fontSize: "12px" 
+                          }} 
+                        />
+                      </div>
+                      <span style={{ color: "#d1d5db" }}>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Upgrade button */}
+                <button
+                  onClick={() => {
+                    setShowProPopup(false);
+                    navigate("/pro-version");
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "12px 0",
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+                    color: "#ffffff",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    marginTop: "10px",
+                    boxShadow: "0 4px 6px rgba(59, 130, 246, 0.25)",
+                  }}
+                >
+                  Upgrade to Pro
+                </button>
+              </>
             )}
             
             {/* Glowing border effect */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -11,6 +11,17 @@ import {
 function CancelPage() {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(8);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Handle window resize
+  useLayoutEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Auto-redirect after 8 seconds
   useEffect(() => {
@@ -33,9 +44,6 @@ function CancelPage() {
     navigate("/pro-version"); // Go to Pro version page
   };
   
-  // Detect mobile screens
-  const isMobile = window.innerWidth < 768;
-  
   return (
     <div style={{
       minHeight: "100vh",
@@ -53,14 +61,15 @@ function CancelPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 24px",
+        padding: isMobile ? "0 16px" : "0 24px",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
       }}>
         <div style={{
           display: "flex",
           alignItems: "center", 
-          gap: "8px", 
-          cursor: "pointer"
+          gap: isMobile ? "4px" : "8px", 
+          cursor: "pointer",
+          fontSize: isMobile ? "14px" : "16px"
         }} onClick={handleBack}>
           <FontAwesomeIcon icon={faArrowLeft} />
           <span>Back to App</span>
@@ -68,7 +77,7 @@ function CancelPage() {
         
         <div style={{
           fontWeight: "600",
-          fontSize: "18px",
+          fontSize: isMobile ? "16px" : "18px",
           color: "#60A5FA",
           letterSpacing: "0.5px",
           display: "flex",
@@ -88,12 +97,12 @@ function CancelPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "24px",
+        padding: isMobile ? "16px" : "24px",
       }}>
         <div style={{
           maxWidth: "600px",
           width: "100%",
-          padding: "48px 24px",
+          padding: isMobile ? "32px 16px" : "48px 24px",
           textAlign: "center",
           backgroundColor: "rgba(31, 41, 55, 0.6)",
           borderRadius: "16px",
@@ -102,8 +111,8 @@ function CancelPage() {
           animation: "fadeInUp 0.5s ease-out"
         }}>
           <div style={{
-            width: "100px",
-            height: "100px",
+            width: isMobile ? "80px" : "100px",
+            height: isMobile ? "80px" : "100px",
             borderRadius: "50%",
             backgroundColor: "rgba(239, 68, 68, 0.1)",
             border: "1px solid rgba(239, 68, 68, 0.3)",
@@ -115,7 +124,7 @@ function CancelPage() {
             <FontAwesomeIcon 
               icon={faTimesCircle} 
               style={{ 
-                fontSize: "48px", 
+                fontSize: isMobile ? "36px" : "48px", 
                 color: "#EF4444" 
               }} 
             />
@@ -131,23 +140,23 @@ function CancelPage() {
           </h1>
           
           <p style={{
-            fontSize: "18px",
+            fontSize: isMobile ? "16px" : "18px",
             color: "#D1D5DB",
-            marginBottom: "32px",
+            marginBottom: isMobile ? "24px" : "32px",
             lineHeight: "1.6"
           }}>
             Your subscription process was cancelled or encountered an issue. No charges have been made to your account.
           </p>
           
           <div style={{
-            padding: "16px",
+            padding: isMobile ? "12px" : "16px",
             backgroundColor: "rgba(59, 130, 246, 0.1)",
             borderRadius: "8px",
-            marginBottom: "32px",
+            marginBottom: isMobile ? "24px" : "32px",
             border: "1px solid rgba(59, 130, 246, 0.2)"
           }}>
             <p style={{
-              fontSize: "15px",
+              fontSize: isMobile ? "14px" : "15px",
               color: "#93C5FD",
               margin: 0
             }}>
@@ -156,9 +165,9 @@ function CancelPage() {
           </div>
           
           <p style={{
-            fontSize: "16px",
+            fontSize: isMobile ? "15px" : "16px",
             color: "#9CA3AF",
-            marginBottom: "32px"
+            marginBottom: isMobile ? "24px" : "32px"
           }}>
             Redirecting to main app in <b>{countdown}</b> seconds...
           </p>
@@ -166,26 +175,28 @@ function CancelPage() {
           <div style={{
             display: "flex",
             justifyContent: "center",
-            gap: "16px",
-            flexWrap: "wrap"
+            gap: isMobile ? "12px" : "16px",
+            flexDirection: isMobile ? "column" : "row",
+            width: "100%"
           }}>
             <button
               onClick={handleTryAgain}
               style={{
-                padding: "16px 32px",
+                padding: isMobile ? "14px 24px" : "16px 32px",
                 borderRadius: "12px",
                 background: "linear-gradient(135deg, #F59E0B, #D97706)",
                 color: "#ffffff",
                 border: "none",
                 cursor: "pointer",
-                fontSize: "16px",
+                fontSize: isMobile ? "15px" : "16px",
                 fontWeight: "600",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
-                gap: "8px"
+                gap: "8px",
+                width: isMobile ? "100%" : "auto"
               }}
             >
               <FontAwesomeIcon icon={faRedo} />
@@ -195,19 +206,20 @@ function CancelPage() {
             <button
               onClick={handleBack}
               style={{
-                padding: "16px 32px",
+                padding: isMobile ? "14px 24px" : "16px 32px",
                 borderRadius: "12px",
                 background: "transparent",
                 color: "#D1D5DB",
                 border: "1px solid rgba(209, 213, 219, 0.3)",
                 cursor: "pointer",
-                fontSize: "16px",
+                fontSize: isMobile ? "15px" : "16px",
                 fontWeight: "500",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 transition: "all 0.3s ease",
-                gap: "8px"
+                gap: "8px",
+                width: isMobile ? "100%" : "auto"
               }}
             >
               <FontAwesomeIcon icon={faArrowLeft} />
@@ -220,9 +232,9 @@ function CancelPage() {
       {/* Footer */}
       <div style={{
         textAlign: "center",
-        padding: "24px",
+        padding: isMobile ? "16px" : "24px",
         color: "#9CA3AF",
-        fontSize: "14px"
+        fontSize: isMobile ? "13px" : "14px"
       }}>
         <p>© {new Date().getFullYear()} Clinical Paws. All rights reserved.</p>
         <p style={{ 
@@ -268,6 +280,13 @@ function CancelPage() {
           
           button:active {
             transform: translateY(0);
+          }
+          
+          @media (max-width: 767px) {
+            button:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+            }
           }
         `}
       </style>

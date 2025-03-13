@@ -16,7 +16,9 @@ import {
   faChevronRight,
   faArrowDown,
   faChevronDown,
-  faCrown
+  faCrown,
+  faCheck,
+  faTimes
 } from "@fortawesome/free-solid-svg-icons";
 
 function AudioRecorderPage() {
@@ -81,6 +83,9 @@ function AudioRecorderPage() {
   const [isProUser, setIsProUser] = useState(false);
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
+  
+  // Pro user popup
+  const [showProPopup, setShowProPopup] = useState(false);
 
   // ---------------------------
   // Check viewport size for responsive design
@@ -645,7 +650,7 @@ function AudioRecorderPage() {
   };
 
   const handleSettings = () => {
-    alert("Navigating to Settings...");
+    navigate("/settings");
   };
 
   const handleLogout = () => {
@@ -701,7 +706,17 @@ function AudioRecorderPage() {
 
   // Add Pro version navigation handler
   const handleProVersion = () => {
-    navigate("/pro-version");
+    if (isProUser) {
+      // Show the Pro popup instead of navigating
+      setShowProPopup(true);
+      
+      // Auto-hide the popup after 5 seconds
+      setTimeout(() => {
+        setShowProPopup(false);
+      }, 5000);
+    } else {
+      navigate("/pro-version");
+    }
   };
 
   // ---------------------------
@@ -786,6 +801,32 @@ function AudioRecorderPage() {
               scrollbarColor: "#4b5563 #1f2937", // Firefox scrollbar colors
             }}
           >
+            {/* New Chat Button - Moved here from top navigation */}
+            <button
+              onClick={handleNewChat}
+              style={{
+                padding: "10px 16px",
+                borderRadius: "8px",
+                background: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem)
+                  ? "rgba(59, 130, 246, 0.2)" 
+                  : "linear-gradient(135deg, #3B82F6, #2563EB)",
+                color: "#ffffff",
+                border: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "1px solid #3B82F6" : "none",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.3s ease",
+                boxShadow: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "none" : "0 2px 4px rgba(59, 130, 246, 0.25)",
+                marginBottom: "20px",
+                width: "100%",
+              }}
+            >
+              {(isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "New Chat" : "Start New Chat"}
+            </button>
+            
             <h3 style={{
               marginTop: 0,
               color: "#f3f4f6",
@@ -980,29 +1021,15 @@ function AudioRecorderPage() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          {/* New Chat Button */}
-          <button
-            onClick={handleNewChat}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "8px",
-              background: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem)
-                ? "rgba(59, 130, 246, 0.2)" 
-                : "linear-gradient(135deg, #3B82F6, #2563EB)",
-              color: "#ffffff",
-              border: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "1px solid #3B82F6" : "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "500",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.3s ease",
-              boxShadow: (isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "none" : "0 2px 4px rgba(59, 130, 246, 0.25)",
-            }}
-          >
-            {(isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem) ? "New Chat" : "Start New Chat"}
-          </button>
+          {/* Title for desktop (left-aligned) */}
+          <div style={{
+            fontWeight: "600",
+            fontSize: "18px",
+            color: "#60A5FA",
+            letterSpacing: "0.5px"
+          }}>
+            Clinical Paws
+          </div>
 
           {/* Title for mobile (centered) */}
           {isMobile && (
@@ -1828,6 +1855,193 @@ function AudioRecorderPage() {
         </div>
       </div>
 
+      {/* Pro User Popup */}
+      {showProPopup && (
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            zIndex: 1000,
+            backdropFilter: "blur(8px)",
+            animation: "fadeIn 0.3s ease-out",
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: "#1f2937",
+              borderRadius: "16px",
+              padding: "30px",
+              maxWidth: isMobile ? "90%" : "450px",
+              width: "100%",
+              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+              position: "relative",
+              overflow: "hidden",
+              animation: "scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowProPopup(false)}
+              style={{
+                position: "absolute",
+                top: "15px",
+                right: "15px",
+                background: "none",
+                border: "none",
+                color: "#9CA3AF",
+                fontSize: "20px",
+                cursor: "pointer",
+                zIndex: 10,
+              }}
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            
+            {/* Crown icon with animation */}
+            <div 
+              style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #F59E0B, #D97706)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px auto",
+                position: "relative",
+                animation: "pulse 2s infinite",
+              }}
+            >
+              <FontAwesomeIcon 
+                icon={faCrown} 
+                style={{ 
+                  fontSize: "40px", 
+                  color: "#fff",
+                  animation: "float 3s ease-in-out infinite",
+                }} 
+              />
+              
+              {/* Animated particles */}
+              <div className="particles">
+                {[...Array(6)].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="particle"
+                    style={{
+                      position: "absolute",
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      background: "#FFD700",
+                      opacity: 0.8,
+                      animation: `particle${i+1} 2s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <h2 
+              style={{
+                textAlign: "center",
+                color: "#F59E0B",
+                fontSize: "24px",
+                fontWeight: "700",
+                margin: "0 0 15px 0",
+                animation: "slideUp 0.5s ease-out",
+              }}
+            >
+              Pro Membership Active
+            </h2>
+            
+            <p 
+              style={{
+                textAlign: "center",
+                color: "#e2e8f0",
+                fontSize: "16px",
+                lineHeight: "1.6",
+                marginBottom: "25px",
+                animation: "slideUp 0.6s ease-out",
+              }}
+            >
+              You're enjoying all the premium features of Clinical Paws Pro! Thank you for your support.
+            </p>
+            
+            {/* Features list */}
+            <div 
+              style={{
+                marginBottom: "25px",
+                animation: "slideUp 0.7s ease-out",
+              }}
+            >
+              {[
+                "Unlimited conversations",
+                "Priority processing",
+                "Advanced clinical insights",
+                "Early access to new features"
+              ].map((feature, index) => (
+                <div 
+                  key={index}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "12px",
+                    animation: `slideRight ${0.3 + index * 0.1}s ease-out`,
+                  }}
+                >
+                  <div 
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      backgroundColor: "rgba(245, 158, 11, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: "12px",
+                    }}
+                  >
+                    <FontAwesomeIcon 
+                      icon={faCheck} 
+                      style={{ 
+                        color: "#F59E0B", 
+                        fontSize: "12px" 
+                      }} 
+                    />
+                  </div>
+                  <span style={{ color: "#d1d5db" }}>{feature}</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Subscription info */}
+            {subscriptionData && subscriptionData.current_period_end && (
+              <div 
+                style={{
+                  textAlign: "center",
+                  fontSize: "14px",
+                  color: "#9CA3AF",
+                  marginTop: "20px",
+                  animation: "slideUp 0.8s ease-out",
+                }}
+              >
+                Subscription renews on {new Date(subscriptionData.current_period_end * 1000).toLocaleDateString()}
+              </div>
+            )}
+            
+            {/* Glowing border effect */}
+            <div className="glow-effect"></div>
+          </div>
+        </div>
+      )}
+
       {/* Add viewport meta tag for mobile responsiveness */}
       <style>
         {`
@@ -1923,6 +2137,92 @@ function AudioRecorderPage() {
               transform: scale(1.5);
               opacity: 0;
             }
+          }
+
+          /* Pro popup animations */
+          @keyframes scaleIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+
+          @keyframes slideUp {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+          }
+
+          @keyframes slideRight {
+            0% { transform: translateX(-20px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+          }
+
+          @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+          }
+
+          /* Particle animations */
+          @keyframes particle1 {
+            0% { transform: translate(0, 0); opacity: 0; }
+            25% { opacity: 1; }
+            50% { transform: translate(40px, -40px); opacity: 0; }
+            100% { opacity: 0; }
+          }
+
+          @keyframes particle2 {
+            0% { transform: translate(0, 0); opacity: 0; }
+            25% { opacity: 1; }
+            50% { transform: translate(-40px, -40px); opacity: 0; }
+            100% { opacity: 0; }
+          }
+
+          @keyframes particle3 {
+            0% { transform: translate(0, 0); opacity: 0; }
+            25% { opacity: 1; }
+            50% { transform: translate(40px, 40px); opacity: 0; }
+            100% { opacity: 0; }
+          }
+
+          @keyframes particle4 {
+            0% { transform: translate(0, 0); opacity: 0; }
+            25% { opacity: 1; }
+            50% { transform: translate(-40px, 40px); opacity: 0; }
+            100% { opacity: 0; }
+          }
+
+          @keyframes particle5 {
+            0% { transform: translate(0, 0); opacity: 0; }
+            25% { opacity: 1; }
+            50% { transform: translate(0, -50px); opacity: 0; }
+            100% { opacity: 0; }
+          }
+
+          @keyframes particle6 {
+            0% { transform: translate(0, 0); opacity: 0; }
+            25% { opacity: 1; }
+            50% { transform: translate(0, 50px); opacity: 0; }
+            100% { opacity: 0; }
+          }
+
+          /* Glow effect */
+          .glow-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 16px;
+            pointer-events: none;
+            z-index: -1;
+            background: linear-gradient(45deg, rgba(245, 158, 11, 0) 0%, rgba(245, 158, 11, 0.3) 50%, rgba(245, 158, 11, 0) 100%);
+            background-size: 200% 200%;
+            animation: glow 3s linear infinite;
+          }
+
+          @keyframes glow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
           }
 
           /* Smooth transition for all interactive elements */

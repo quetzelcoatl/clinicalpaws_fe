@@ -10,6 +10,17 @@ import {
 function SuccessPage() {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Handle window resize for responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Auto-redirect to main page after 5 seconds
   useEffect(() => {
@@ -28,9 +39,6 @@ function SuccessPage() {
     navigate("/"); // Go back to main app
   };
   
-  // Detect mobile screens
-  const isMobile = window.innerWidth < 768;
-  
   return (
     <div style={{
       minHeight: "100vh",
@@ -48,7 +56,7 @@ function SuccessPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 24px",
+        padding: isMobile ? "0 16px" : "0 24px",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
       }}>
         <div style={{
@@ -58,12 +66,12 @@ function SuccessPage() {
           cursor: "pointer"
         }} onClick={handleBack}>
           <FontAwesomeIcon icon={faArrowLeft} />
-          <span>Back to App</span>
+          <span>{isMobile ? "Back" : "Back to App"}</span>
         </div>
         
         <div style={{
           fontWeight: "600",
-          fontSize: "18px",
+          fontSize: isMobile ? "16px" : "18px",
           color: "#60A5FA",
           letterSpacing: "0.5px",
           display: "flex",
@@ -83,12 +91,12 @@ function SuccessPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "24px",
+        padding: isMobile ? "16px" : "24px",
       }}>
         <div style={{
           maxWidth: "600px",
           width: "100%",
-          padding: "48px 24px",
+          padding: isMobile ? "32px 16px" : "48px 24px",
           textAlign: "center",
           backgroundColor: "rgba(31, 41, 55, 0.6)",
           borderRadius: "16px",
@@ -97,20 +105,20 @@ function SuccessPage() {
           animation: "fadeInUp 0.5s ease-out"
         }}>
           <div style={{
-            width: "100px",
-            height: "100px",
+            width: isMobile ? "80px" : "100px",
+            height: isMobile ? "80px" : "100px",
             borderRadius: "50%",
             backgroundColor: "rgba(16, 185, 129, 0.1)",
             border: "1px solid rgba(16, 185, 129, 0.3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            margin: "0 auto 32px",
+            margin: "0 auto 24px",
           }}>
             <FontAwesomeIcon 
               icon={faCheckCircle} 
               style={{ 
-                fontSize: "48px", 
+                fontSize: isMobile ? "36px" : "48px", 
                 color: "#10B981" 
               }} 
             />
@@ -126,32 +134,36 @@ function SuccessPage() {
           </h1>
           
           <div style={{
-            width: "80px",
-            height: "80px",
+            width: isMobile ? "64px" : "80px",
+            height: isMobile ? "64px" : "80px",
             borderRadius: "50%",
             background: "linear-gradient(135deg, #F59E0B, #D97706)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            margin: "24px auto",
+            margin: isMobile ? "20px auto" : "24px auto",
             boxShadow: "0 8px 20px rgba(245, 158, 11, 0.3)"
           }}>
-            <FontAwesomeIcon icon={faCrown} style={{ fontSize: "32px", color: "#fff" }} />
+            <FontAwesomeIcon icon={faCrown} style={{ 
+              fontSize: isMobile ? "24px" : "32px", 
+              color: "#fff" 
+            }} />
           </div>
           
           <p style={{
-            fontSize: "18px",
+            fontSize: isMobile ? "16px" : "18px",
             color: "#D1D5DB",
-            marginBottom: "32px",
-            lineHeight: "1.6"
+            marginBottom: isMobile ? "24px" : "32px",
+            lineHeight: "1.6",
+            padding: isMobile ? "0 8px" : "0"
           }}>
             Thank you for upgrading to Clinical Paws Pro! Your account has been successfully upgraded, and you now have access to all premium features.
           </p>
           
           <p style={{
-            fontSize: "16px",
+            fontSize: isMobile ? "14px" : "16px",
             color: "#9CA3AF",
-            marginBottom: "32px"
+            marginBottom: isMobile ? "24px" : "32px"
           }}>
             Redirecting to main app in <b>{countdown}</b> seconds...
           </p>
@@ -159,20 +171,21 @@ function SuccessPage() {
           <button
             onClick={handleBack}
             style={{
-              padding: "16px 32px",
+              padding: isMobile ? "12px 24px" : "16px 32px",
               borderRadius: "12px",
               background: "linear-gradient(135deg, #3B82F6, #2563EB)",
               color: "#ffffff",
               border: "none",
               cursor: "pointer",
-              fontSize: "16px",
+              fontSize: isMobile ? "15px" : "16px",
               fontWeight: "600",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               transition: "all 0.3s ease",
               boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
-              gap: "8px"
+              gap: "8px",
+              width: isMobile ? "100%" : "auto"
             }}
           >
             <FontAwesomeIcon icon={faArrowLeft} />
@@ -184,9 +197,9 @@ function SuccessPage() {
       {/* Footer */}
       <div style={{
         textAlign: "center",
-        padding: "24px",
+        padding: isMobile ? "16px" : "24px",
         color: "#9CA3AF",
-        fontSize: "14px"
+        fontSize: isMobile ? "12px" : "14px"
       }}>
         <p>© {new Date().getFullYear()} Clinical Paws. All rights reserved.</p>
       </div>
@@ -224,6 +237,18 @@ function SuccessPage() {
           
           button:active {
             transform: translateY(0);
+          }
+          
+          @media (max-width: 767px) {
+            button:hover {
+              transform: none;
+              box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            }
+            
+            button:active {
+              transform: translateY(1px);
+              opacity: 0.9;
+            }
           }
         `}
       </style>

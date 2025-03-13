@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -38,6 +38,19 @@ function ProVersionPage() {
     billingCycle: "per month",
     description: "Full access to all premium features"
   };
+  
+  // Check if we're on mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Add event listener to update isMobile state when window is resized
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   const handleSubscribe = async () => {
     setIsLoading(true);
@@ -92,24 +105,28 @@ function ProVersionPage() {
   
   return (
     <div style={{
-      height: "100vh",
-      backgroundColor: "#0F172A", // Darker background
+      height: isMobile ? "auto" : "100vh", // Auto height on mobile, fixed on desktop
+      minHeight: isMobile ? "100vh" : "auto", // Min height on mobile
+      backgroundColor: "#0F172A",
       color: "#f3f4f6",
       fontFamily: "'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
       display: "flex",
       flexDirection: "column",
-      overflow: "hidden" // Prevent scrolling
+      overflow: isMobile ? "auto" : "hidden" // Allow scrolling on mobile, prevent on desktop
     }}>
       {/* Header */}
       <div style={{
-        height: "60px",
+        height: isMobile ? "50px" : "60px", // Original height on desktop
         backgroundColor: "rgba(15, 23, 42, 0.95)",
         borderBottom: "1px solid rgba(99, 102, 241, 0.2)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 24px",
+        padding: isMobile ? "0 16px" : "0 24px", // Original padding on desktop
         boxShadow: "0 4px 20px rgba(99, 102, 241, 0.2)",
+        position: isMobile ? "sticky" : "relative", // Only sticky on mobile
+        top: 0,
+        zIndex: 10,
       }}>
         <div style={{
           display: "flex",
@@ -123,7 +140,7 @@ function ProVersionPage() {
         
         <div style={{
           fontWeight: "700",
-          fontSize: "20px",
+          fontSize: isMobile ? "16px" : "20px", // Original size on desktop
           background: "linear-gradient(135deg, #60A5FA, #8B5CF6)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
@@ -150,11 +167,11 @@ function ProVersionPage() {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
+        justifyContent: isMobile ? "center" : "center", // Center on both
         alignItems: "center",
         maxWidth: "1100px",
         margin: "0 auto",
-        padding: "0 24px",
+        padding: isMobile ? "12px 16px" : "24px 16px", // Original padding on desktop
         width: "100%",
         boxSizing: "border-box",
         background: "radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08), transparent 70%)",
@@ -163,23 +180,25 @@ function ProVersionPage() {
         <div style={{
           display: "flex",
           width: "100%",
-          gap: "30px",
+          gap: isMobile ? "16px" : "30px", // Original gap on desktop
           alignItems: "center",
           justifyContent: "center",
+          flexDirection: isMobile ? "column" : "row", // Original row layout on desktop
         }}>
           {/* Left Side: Features */}
           <div style={{
             flex: 1,
-            maxWidth: "500px",
+            maxWidth: isMobile ? "100%" : "500px", // Original width on desktop
+            marginBottom: isMobile ? "16px" : "0", // No margin on desktop
           }}>
             <div style={{
-              marginBottom: "24px",
+              marginBottom: isMobile ? "12px" : "24px", // Original margin on desktop
               textAlign: "left",
             }}>
               <h1 style={{
-                fontSize: "36px",
+                fontSize: isMobile ? "24px" : "36px", // Original size on desktop
                 fontWeight: "800",
-                marginBottom: "16px",
+                marginBottom: isMobile ? "8px" : "16px", // Original margin on desktop
                 background: "linear-gradient(135deg, #F5F5F5, #60A5FA)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -190,28 +209,28 @@ function ProVersionPage() {
               </h1>
               
               <p style={{
-                fontSize: "18px",
+                fontSize: isMobile ? "14px" : "18px", // Original size on desktop
                 color: "#D1D5DB",
-                lineHeight: "1.6",
-                marginBottom: "24px",
+                lineHeight: isMobile ? "1.4" : "1.6", // Original line height on desktop
+                marginBottom: isMobile ? "12px" : "24px", // Original margin on desktop
               }}>
                 Unlock the full potential of your clinical practice with premium features 
                 and advanced AI assistance.
               </p>
             </div>
             
-            {/* Features Grid - 3x2 layout */}
+            {/* Features Grid */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "16px",
+              gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", // Same on both
+              gap: isMobile ? "8px" : "16px", // Original gap on desktop
             }}>
               {proFeatures.map((feature, index) => (
                 <div key={index} style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "12px",
-                  padding: "16px",
+                  gap: isMobile ? "8px" : "12px", // Original gap on desktop
+                  padding: isMobile ? "10px" : "16px", // Original padding on desktop
                   backgroundColor: "rgba(30, 41, 59, 0.7)",
                   borderRadius: "12px",
                   border: "1px solid rgba(99, 102, 241, 0.2)",
@@ -225,9 +244,9 @@ function ProVersionPage() {
                   }
                 }}>
                   <div style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "10px",
+                    width: isMobile ? "28px" : "36px", // Original size on desktop
+                    height: isMobile ? "28px" : "36px", // Original size on desktop
+                    borderRadius: isMobile ? "8px" : "10px", // Original radius on desktop
                     background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1))",
                     display: "flex",
                     alignItems: "center",
@@ -235,9 +254,16 @@ function ProVersionPage() {
                     flexShrink: 0,
                     border: "1px solid rgba(99, 102, 241, 0.3)",
                   }}>
-                    <FontAwesomeIcon icon={feature.icon} style={{ color: "#818CF8", fontSize: "16px" }} />
+                    <FontAwesomeIcon icon={feature.icon} style={{ 
+                      color: "#818CF8", 
+                      fontSize: isMobile ? "12px" : "16px" // Original size on desktop
+                    }} />
                   </div>
-                  <span style={{ color: "#E5E7EB", fontSize: "15px", fontWeight: "500" }}>{feature.text}</span>
+                  <span style={{ 
+                    color: "#E5E7EB", 
+                    fontSize: isMobile ? "12px" : "15px", // Original size on desktop
+                    fontWeight: "500" 
+                  }}>{feature.text}</span>
                 </div>
               ))}
             </div>
@@ -246,10 +272,10 @@ function ProVersionPage() {
           {/* Right Side: Pricing Card */}
           <div style={{
             flex: "0 0 auto",
-            width: "340px",
+            width: isMobile ? "100%" : "340px", // Original width on desktop
           }}>
             <div style={{
-              padding: "32px",
+              padding: isMobile ? "20px" : "32px", // Original padding on desktop
               borderRadius: "20px",
               background: "linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9))",
               border: "1px solid rgba(99, 102, 241, 0.3)",
@@ -280,23 +306,26 @@ function ProVersionPage() {
                 width: "100%",
               }}>
                 <div style={{
-                  width: "70px",
-                  height: "70px",
-                  borderRadius: "20px",
+                  width: isMobile ? "50px" : "70px", // Original size on desktop
+                  height: isMobile ? "50px" : "70px", // Original size on desktop
+                  borderRadius: isMobile ? "15px" : "20px", // Original radius on desktop
                   background: "linear-gradient(135deg, #8B5CF6, #6366F1)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  margin: "0 auto 24px",
+                  margin: isMobile ? "0 auto 16px" : "0 auto 24px", // Original margin on desktop
                   boxShadow: "0 10px 25px rgba(99, 102, 241, 0.4)",
                 }}>
-                  <FontAwesomeIcon icon={faCrown} style={{ fontSize: "28px", color: "#fff" }} />
+                  <FontAwesomeIcon icon={faCrown} style={{ 
+                    fontSize: isMobile ? "20px" : "28px", // Original size on desktop
+                    color: "#fff" 
+                  }} />
                 </div>
                 
                 <h3 style={{
-                  fontSize: "24px",
+                  fontSize: isMobile ? "20px" : "24px", // Original size on desktop
                   fontWeight: "700",
-                  marginBottom: "8px",
+                  marginBottom: isMobile ? "4px" : "8px", // Original margin on desktop
                   color: "#F9FAFB",
                 }}>
                   {plan.name} Plan
@@ -307,10 +336,10 @@ function ProVersionPage() {
                   alignItems: "baseline",
                   justifyContent: "center",
                   gap: "4px",
-                  marginBottom: "8px"
+                  marginBottom: isMobile ? "4px" : "8px" // Original margin on desktop
                 }}>
                   <span style={{
-                    fontSize: "48px",
+                    fontSize: isMobile ? "36px" : "48px", // Original size on desktop
                     fontWeight: "800",
                     background: "linear-gradient(135deg, #60A5FA, #8B5CF6)",
                     WebkitBackgroundClip: "text",
@@ -319,15 +348,19 @@ function ProVersionPage() {
                   }}>
                     {plan.price}
                   </span>
-                  <span style={{ color: "#9CA3AF", fontSize: "16px", fontWeight: "500" }}>
+                  <span style={{ 
+                    color: "#9CA3AF", 
+                    fontSize: isMobile ? "14px" : "16px", // Original size on desktop
+                    fontWeight: "500" 
+                  }}>
                     {plan.billingCycle}
                   </span>
                 </div>
                 
                 <p style={{
                   color: "#D1D5DB",
-                  fontSize: "15px",
-                  marginBottom: "32px",
+                  fontSize: isMobile ? "13px" : "15px", // Original size on desktop
+                  marginBottom: isMobile ? "20px" : "32px", // Original margin on desktop
                   padding: "0 10px",
                 }}>
                   {plan.description}
@@ -336,13 +369,13 @@ function ProVersionPage() {
                 {/* Error message */}
                 {error && (
                   <div style={{
-                    padding: "12px",
+                    padding: isMobile ? "8px" : "12px", // Original padding on desktop
                     borderRadius: "8px",
                     backgroundColor: "rgba(239, 68, 68, 0.1)",
                     border: "1px solid rgba(239, 68, 68, 0.3)",
                     color: "#F87171",
-                    marginBottom: "16px",
-                    fontSize: "14px",
+                    marginBottom: isMobile ? "12px" : "16px", // Original margin on desktop
+                    fontSize: isMobile ? "12px" : "14px", // Original size on desktop
                     textAlign: "center"
                   }}>
                     {error}
@@ -354,7 +387,7 @@ function ProVersionPage() {
                   onClick={handleSubscribe}
                   disabled={isLoading}
                   style={{
-                    padding: "16px 32px",
+                    padding: isMobile ? "12px 24px" : "16px 32px", // Original padding on desktop
                     width: "100%",
                     borderRadius: "12px",
                     background: isLoading 
@@ -363,7 +396,7 @@ function ProVersionPage() {
                     color: "#ffffff",
                     border: "none",
                     cursor: isLoading ? "wait" : "pointer",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px", // Original size on desktop
                     fontWeight: "600",
                     display: "inline-flex",
                     alignItems: "center",
@@ -387,9 +420,9 @@ function ProVersionPage() {
                 </button>
                 
                 <p style={{
-                  fontSize: "14px",
+                  fontSize: isMobile ? "12px" : "14px", // Original size on desktop
                   color: "#9CA3AF",
-                  marginTop: "16px"
+                  marginTop: isMobile ? "12px" : "16px" // Original margin on desktop
                 }}>
                   Cancel anytime. No hidden fees.
                 </p>
@@ -402,10 +435,10 @@ function ProVersionPage() {
       {/* Footer - Simplified */}
       <div style={{
         textAlign: "center",
-        padding: "16px",
+        padding: isMobile ? "10px" : "16px", // Original padding on desktop
         borderTop: "1px solid rgba(99, 102, 241, 0.15)",
         color: "#9CA3AF",
-        fontSize: "14px",
+        fontSize: isMobile ? "12px" : "14px", // Original size on desktop
         background: "rgba(15, 23, 42, 0.95)",
       }}>
         <p>© {new Date().getFullYear()} Clinical Paws. All rights reserved.</p>
@@ -420,7 +453,8 @@ function ProVersionPage() {
             margin: 0;
             padding: 0;
             background-color: #0F172A;
-            overflow: hidden;
+            overflow: auto;
+            height: 100%;
           }
           
           * {
@@ -449,8 +483,17 @@ function ProVersionPage() {
           button:active {
             transform: translateY(0);
           }
+          
+          /* Add responsive meta tag */
+          @media (max-width: 768px) {
+            body {
+              font-size: 14px;
+            }
+          }
         `}
       </style>
+      {/* Add viewport meta tag for proper mobile rendering */}
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     </div>
   );
 }

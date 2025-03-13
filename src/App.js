@@ -17,6 +17,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ProVersionPage from "./pages/ProVersionPage";
 import SuccessPage from "./pages/subscription/SuccessPage";
 import CancelPage from "./pages/subscription/CancelPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function App() {
   useEffect(() => {
@@ -65,6 +66,7 @@ function App() {
         <Route path="/pro-version" element={<ProVersionPage />} />
         <Route path="/subscription/success" element={<SuccessPage />} />
         <Route path="/subscription/cancel" element={<CancelPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </Router>
   );

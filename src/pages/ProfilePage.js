@@ -5,14 +5,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faUser, 
   faEnvelope, 
-  faIdCard, 
-  faCalendarAlt, 
+  faEdit,
   faArrowLeft,
-  faEdit
+  faCreditCard,
+  faCalendarDay,
+  faCheckCircle,
+  faGlobe
 } from "@fortawesome/free-solid-svg-icons";
 
 function ProfilePage() {
   const [userData, setUserData] = useState(null);
+  const [subscriptionData, setSubscriptionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -61,6 +64,28 @@ function ProfilePage() {
 
       const data = await response.json();
       setUserData(data.data);
+      
+      // Fetch subscription data
+      try {
+        const subscriptionResponse = await fetch(
+          "https://clinicalpaws.com/api/signup/current",
+          {
+            method: "GET",
+            headers: {
+              token: accessToken,
+              accept: "application/json",
+            },
+          }
+        );
+        
+        if (subscriptionResponse.ok) {
+          const subscriptionData = await subscriptionResponse.json();
+          setSubscriptionData(subscriptionData);
+        }
+      } catch (subErr) {
+        console.error("Error fetching subscription details:", subErr);
+      }
+      
     } catch (err) {
       setError("An error occurred while fetching user details");
       console.error("Error in fetchUserDetails:", err);
@@ -89,10 +114,29 @@ function ProfilePage() {
       day: 'numeric' 
     });
   };
+  
+  // Format currency
+  const formatCurrency = (amount, currency) => {
+    if (!amount || !currency) return "N/A";
+    
+    const formatter = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+    
+    return formatter.format(amount);
+  };
 
   // Handle back button
   const handleBack = () => {
     navigate(-1);
+  };
+
+  // Handle subscription button click
+  const handleSubscription = () => {
+    navigate("/pro-version");
   };
 
   return (
@@ -181,6 +225,7 @@ function ProfilePage() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            gap: "30px",
           }}>
             {/* Profile Avatar */}
             <div style={{
@@ -194,7 +239,6 @@ function ProfilePage() {
               color: "#fff",
               fontWeight: "600",
               fontSize: "40px",
-              marginBottom: "24px",
               boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
               border: "4px solid rgba(255,255,255,0.1)",
             }}>
@@ -264,44 +308,6 @@ function ProfilePage() {
                     <div style={{ fontSize: "16px", fontWeight: "500" }}>{userData.email || "Not provided"}</div>
                   </div>
                 </div>
-
-                {/* User ID */}
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "12px 16px",
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                  borderRadius: "8px",
-                }}>
-                  <FontAwesomeIcon icon={faIdCard} style={{ 
-                    color: "#60A5FA", 
-                    marginRight: "16px",
-                    width: "20px",
-                  }} />
-                  <div>
-                    <div style={{ fontSize: "14px", color: "#9CA3AF" }}>User ID</div>
-                    <div style={{ fontSize: "16px", fontWeight: "500" }}>{userData.user_id || "Not available"}</div>
-                  </div>
-                </div>
-
-                {/* Created At */}
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "12px 16px",
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                  borderRadius: "8px",
-                }}>
-                  <FontAwesomeIcon icon={faCalendarAlt} style={{ 
-                    color: "#60A5FA", 
-                    marginRight: "16px",
-                    width: "20px",
-                  }} />
-                  <div>
-                    <div style={{ fontSize: "14px", color: "#9CA3AF" }}>Member Since</div>
-                    <div style={{ fontSize: "16px", fontWeight: "500" }}>{formatDate(userData.created_at)}</div>
-                  </div>
-                </div>
               </div>
 
               {/* Edit Profile Button */}
@@ -325,6 +331,184 @@ function ProfilePage() {
                 Edit Profile
               </button>
             </div>
+            
+            {/* Subscription Info Card */}
+            {subscriptionData ? (
+              <div style={{
+                width: "100%",
+                backgroundColor: "#1f2937",
+                borderRadius: "12px",
+                padding: "30px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                border: "1px solid rgba(255,255,255,0.05)",
+              }}>
+                <h2 style={{
+                  fontSize: "24px",
+                  fontWeight: "600",
+                  marginBottom: "24px",
+                  textAlign: "center",
+                  color: "#f3f4f6",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                  paddingBottom: "16px",
+                }}>
+                  Subscription Details
+                </h2>
+                
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr",
+                  gap: "20px",
+                }}>
+                  {/* Plan Type */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "12px 16px",
+                    backgroundColor: "rgba(255,255,255,0.03)",
+                    borderRadius: "8px",
+                  }}>
+                    <FontAwesomeIcon icon={faCreditCard} style={{ 
+                      color: "#60A5FA", 
+                      marginRight: "16px",
+                      width: "20px",
+                    }} />
+                    <div>
+                      <div style={{ fontSize: "14px", color: "#9CA3AF" }}>Plan</div>
+                      <div style={{ fontSize: "16px", fontWeight: "500", textTransform: "capitalize" }}>
+                        {subscriptionData.plan || "Not available"}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Status */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "12px 16px",
+                    backgroundColor: "rgba(255,255,255,0.03)",
+                    borderRadius: "8px",
+                  }}>
+                    <FontAwesomeIcon icon={faCheckCircle} style={{ 
+                      color: subscriptionData.is_active ? "#10B981" : "#F87171", 
+                      marginRight: "16px",
+                      width: "20px",
+                    }} />
+                    <div>
+                      <div style={{ fontSize: "14px", color: "#9CA3AF" }}>Status</div>
+                      <div style={{ 
+                        fontSize: "16px", 
+                        fontWeight: "500",
+                        textTransform: "capitalize",
+                        color: subscriptionData.is_active ? "#10B981" : "#F87171",
+                      }}>
+                        {subscriptionData.status || "Not available"}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Price */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "12px 16px",
+                    backgroundColor: "rgba(255,255,255,0.03)",
+                    borderRadius: "8px",
+                  }}>
+                    <FontAwesomeIcon icon={faGlobe} style={{ 
+                      color: "#60A5FA", 
+                      marginRight: "16px",
+                      width: "20px",
+                    }} />
+                    <div>
+                      <div style={{ fontSize: "14px", color: "#9CA3AF" }}>Price</div>
+                      <div style={{ fontSize: "16px", fontWeight: "500" }}>
+                        {formatCurrency(subscriptionData.price, subscriptionData.currency)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Start Date */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "12px 16px",
+                    backgroundColor: "rgba(255,255,255,0.03)",
+                    borderRadius: "8px",
+                  }}>
+                    <FontAwesomeIcon icon={faCalendarDay} style={{ 
+                      color: "#60A5FA", 
+                      marginRight: "16px",
+                      width: "20px",
+                    }} />
+                    <div>
+                      <div style={{ fontSize: "14px", color: "#9CA3AF" }}>Start Date</div>
+                      <div style={{ fontSize: "16px", fontWeight: "500" }}>
+                        {formatDate(subscriptionData.start_date)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                width: "100%",
+                backgroundColor: "#1f2937",
+                borderRadius: "12px",
+                padding: "30px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                border: "1px solid rgba(255,255,255,0.05)",
+              }}>
+                <h2 style={{
+                  fontSize: "24px",
+                  fontWeight: "600",
+                  marginBottom: "24px",
+                  textAlign: "center",
+                  color: "#f3f4f6",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                  paddingBottom: "16px",
+                }}>
+                  Subscription Details
+                </h2>
+                
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "30px 20px",
+                  textAlign: "center",
+                }}>
+                  <div style={{
+                    fontSize: "16px",
+                    color: "#9CA3AF",
+                    marginBottom: "20px",
+                  }}>
+                    You don't have an active subscription yet.
+                  </div>
+                  
+                  <button 
+                    onClick={handleSubscription}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor: "#60A5FA",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "16px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faCreditCard} style={{ marginRight: "8px" }} />
+                    Get Subscription
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{

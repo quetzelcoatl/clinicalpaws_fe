@@ -29,6 +29,9 @@ function AudioRecorderPage() {
   const [timerInterval, setTimerInterval] = useState(null);  // To store the interval ID
   const MINIMUM_RECORDING_TIME = 10; // Minimum recording time in seconds
 
+  // Text input state
+  const [textInput, setTextInput] = useState("");
+  
   // Processing status
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -230,8 +233,8 @@ function AudioRecorderPage() {
   // 5) Upload the recorded audio
   // ---------------------------
   const uploadAudio = async (blobParam) => {
-    if (!blobParam) {
-      alert("No audio to upload.");
+    if (!blobParam && !textInput) {
+      alert("No audio or text to upload.");
       return;
     }
 
@@ -247,7 +250,14 @@ function AudioRecorderPage() {
       }
 
       const formData = new FormData();
-      formData.append("audio_file", blobParam, "recording.wav");
+      if (blobParam) {
+        formData.append("audio_file", blobParam, "recording.wav");
+      }
+      
+      // Add text input to form data if provided
+      if (textInput) {
+        formData.append("text_input", textInput);
+      }
       
       const accessToken = Cookies.get("accessToken");
       if (!accessToken) {
@@ -307,6 +317,9 @@ function AudioRecorderPage() {
         
         setIsProcessing(true);
       }
+      
+      // Clear the text input field after submission
+      setTextInput("");
     } catch (err) {
       console.error("Upload error:", err);
       alert("Error uploading audio: " + err.message);
@@ -616,6 +629,25 @@ function AudioRecorderPage() {
       setOrderData(null);
       setOrderId(null);
       setSelectedHistoryItem(null); // Clear the selected history item when starting a new chat
+    }
+  };
+
+  // Handler for text input submission
+  const handleTextSubmit = () => {
+    if (textInput.trim() === "") return;
+    uploadAudio(null); // Pass null as blob, will use textInput instead
+  };
+
+  // Handler for text input changes
+  const handleTextInputChange = (e) => {
+    setTextInput(e.target.value);
+  };
+
+  // Handle Enter key press in text input field
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent default to avoid newline in the input
+      handleTextSubmit();
     }
   };
 
@@ -1065,6 +1097,65 @@ function AudioRecorderPage() {
             overflowX: "hidden", // Prevent horizontal scrolling
           }}
         >
+          {/* Instructional Text Box for New Chat */}
+          {isNewChat && currentChatMessages.length === 0 && !selectedHistoryItem && (
+            <div style={{
+              maxWidth: "700px",
+              width: "90%",
+              marginTop: "30px",
+              marginBottom: "30px",
+              padding: "24px",
+              borderRadius: "12px",
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              border: "1px solid rgba(59, 130, 246, 0.25)",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+              animation: "fadeIn 0.4s ease-out",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center"
+            }}>
+              <div style={{
+                width: "50px",
+                height: "50px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "16px",
+              }}>
+                <FontAwesomeIcon icon={faMicrophone} style={{ color: "#fff", fontSize: "24px" }} />
+              </div>
+              <h3 style={{
+                margin: "0 0 12px 0",
+                color: "#f3f4f6",
+                fontSize: isMobile ? "18px" : "20px",
+                fontWeight: "600",
+              }}>Ready to Help with Your Case</h3>
+              <p style={{
+                color: "#d1d5db",
+                fontSize: isMobile ? "14px" : "16px",
+                lineHeight: "1.7",
+                marginBottom: "16px",
+              }}>
+                Tap the microphone button below and describe the patient's condition in detail.
+                Include relevant symptoms, medical history, and any specific questions you have.
+              </p>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "10px 16px",
+                backgroundColor: "rgba(31, 41, 55, 0.5)",
+                borderRadius: "8px",
+                marginTop: "8px",
+              }}>
+                <FontAwesomeIcon icon={faChevronDown} style={{ color: "#60A5FA", marginRight: "12px" }} />
+                <span style={{ color: "#9CA3AF", fontSize: "12px" }}>Tap the microphone button below to start recording</span>
+              </div>
+            </div>
+          )}
+          
           {/* Chat Status Indicator */}
           {!isNewChat && previousOrderId && (
             <div style={{
@@ -1080,151 +1171,6 @@ function AudioRecorderPage() {
             }}>
               <span style={{ marginRight: "8px" }}>●</span>
               Continuing conversation
-            </div>
-          )}
-
-          {/* Microphone Button with Circle */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              marginTop: isMobile ? "1.5rem" : "2.5rem",
-              marginBottom: isMobile ? "2rem" : "3.5rem",
-            }}
-          >
-            <div
-              onClick={handleMicClick}
-              style={{
-                width: isMobile ? "100px" : "130px",
-                height: isMobile ? "100px" : "130px",
-                borderRadius: "50%",
-                background: recording
-                  ? (stopButtonDisabled ? "#9CA3AF" : "linear-gradient(135deg, #ef4444, #dc2626)") // Gray when disabled, red when recording
-                  : "linear-gradient(135deg, #3B82F6, #2563EB)", // Blue gradient when ready
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: buttonDisabled || stopButtonDisabled ? "not-allowed" : "pointer",
-                boxShadow: recording
-                  ? (stopButtonDisabled ? "0 8px 20px rgba(156, 163, 175, 0.3)" : "0 8px 20px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.2)")
-                  : "0 8px 20px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.2)",
-                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                opacity: buttonDisabled || stopButtonDisabled ? 0.7 : 1,
-                transform: buttonDisabled || stopButtonDisabled ? "none" : "translateY(0)",
-                "&:hover": {
-                  transform: buttonDisabled || stopButtonDisabled ? "none" : "translateY(-3px)",
-                  boxShadow: recording && !stopButtonDisabled
-                    ? "0 12px 28px rgba(239, 68, 68, 0.35), 0 0 0 2px rgba(239, 68, 68, 0.25)"
-                    : "0 12px 28px rgba(59, 130, 246, 0.35), 0 0 0 2px rgba(59, 130, 246, 0.25)"
-                },
-                position: "relative",
-              }}
-            >
-              {/* Pulse animation for recording state */}
-              {recording && !stopButtonDisabled && (
-                <div style={{
-                  position: "absolute",
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "50%",
-                  background: "rgba(239, 68, 68, 0.5)",
-                  animation: "pulse 2s infinite"
-                }}></div>
-              )}
-              <FontAwesomeIcon
-                icon={recording ? faMicrophoneSlash : faMicrophone}
-                style={{
-                  fontSize: isMobile ? "36px" : "52px",
-                  color: "#fff",
-                  zIndex: 2, // Place above pulse animation
-                }}
-              />
-            </div>
-
-            {/* Recording Timer */}
-            {recording && (
-              <div
-                style={{
-                  marginTop: "15px",
-                  fontSize: isMobile ? "18px" : "22px",
-                  color: recordingTime < MINIMUM_RECORDING_TIME ? "#F87171" : "#60A5FA",
-                  fontWeight: "600",
-                  fontFamily: "monospace",
-                  letterSpacing: "1px",
-                  animation: recordingTime < MINIMUM_RECORDING_TIME ? "pulse 1s infinite" : "none",
-                }}
-              >
-                {formatTime(recordingTime)}
-              </div>
-            )}
-
-            <div
-              style={{
-                marginTop: recording ? "10px" : "20px",
-                fontSize: isMobile ? "15px" : "17px",
-                color: "#e2e8f0",
-                fontWeight: "500",
-                textAlign: "center",
-              }}
-            >
-              {recording
-                ? (recordingTime < MINIMUM_RECORDING_TIME
-                   ? `Recording... (${MINIMUM_RECORDING_TIME - recordingTime}s remaining)`
-                   : "Tap to Stop Recording")
-                : isProcessing
-                  ? "Processing..."
-                  : "Tap to Start Recording"}
-            </div>
-          </div>
-
-          {isProcessing && (
-            <div
-              style={{
-                marginTop: "20px",
-                padding: isMobile ? "12px 0" : "16px 0",
-                color: "#60A5FA",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: isMobile ? "90%" : "auto",
-                maxWidth: "500px",
-                fontWeight: "500",
-              }}
-            >
-              <div className="spinner" style={{
-                width: "20px",
-                height: "20px",
-                border: "3px solid rgba(59, 130, 246, 0.2)",
-                borderRadius: "50%",
-                borderTop: "3px solid #60A5FA",
-                animation: "spin 1s linear infinite",
-                marginRight: "12px",
-              }}></div>
-              <style>
-                {`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-                @keyframes pulse {
-                  0% { transform: scale(0.95); opacity: 0.7; }
-                  50% { transform: scale(1.05); opacity: 0.3; }
-                  100% { transform: scale(0.95); opacity: 0.7; }
-                }
-                @keyframes fadeIn {
-                  0% { opacity: 0; transform: translateY(-10px); }
-                  100% { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes timerPulse {
-                  0% { opacity: 1; }
-                  50% { opacity: 0.5; }
-                  100% { opacity: 1; }
-                }
-                `}
-              </style>
-              Processing your audio...
             </div>
           )}
 
@@ -1570,13 +1516,16 @@ function AudioRecorderPage() {
             </div>
           )}
 
+          {/* Add padding at the bottom to ensure content isn't hidden behind the floating mic button */}
+          <div style={{ height: isMobile ? "140px" : "180px" }}></div>
+
           {/* Scroll to bottom button - appears when there are multiple messages */}
           {currentChatMessages.length > 1 && (
             <div 
               onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
               style={{
                 position: "fixed",
-                bottom: "20px",
+                bottom: isMobile ? "100px" : "140px", // Increased for desktop to account for separate text input
                 right: "20px",
                 width: "40px",
                 height: "40px",
@@ -1593,6 +1542,173 @@ function AudioRecorderPage() {
               <FontAwesomeIcon icon={faArrowDown} style={{ color: "#fff" }} />
             </div>
           )}
+
+          {/* Microphone Button */}
+          <div
+            style={{
+              position: "fixed",
+              bottom: "110px", // Moved up to make room for the text input below
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              zIndex: 200,
+              backgroundColor: "rgba(17, 24, 39, 0.6)",
+              backdropFilter: "blur(8px)",
+              padding: "12px",
+              borderRadius: "50px",
+              width: isMobile ? "90%" : "auto",
+            }}
+          >
+            <div
+              onClick={handleMicClick}
+              style={{
+                width: isMobile ? "90px" : "110px",
+                height: isMobile ? "90px" : "110px",
+                borderRadius: "50%",
+                background: recording
+                  ? (stopButtonDisabled ? "#9CA3AF" : "linear-gradient(135deg, #ef4444, #dc2626)")
+                  : "linear-gradient(135deg, #3B82F6, #2563EB)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: buttonDisabled || stopButtonDisabled ? "not-allowed" : "pointer",
+                boxShadow: recording
+                  ? (stopButtonDisabled ? "0 8px 20px rgba(156, 163, 175, 0.3)" : "0 8px 20px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.2)")
+                  : "0 10px 25px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.2)",
+                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                opacity: buttonDisabled || stopButtonDisabled ? 0.7 : 1,
+                position: "relative",
+              }}
+            >
+              {/* Pulse animation for recording state */}
+              {recording && !stopButtonDisabled && (
+                <div style={{
+                  position: "absolute",
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  background: "rgba(239, 68, 68, 0.5)",
+                  animation: "pulse 2s infinite"
+                }}></div>
+              )}
+              <FontAwesomeIcon
+                icon={recording ? faMicrophoneSlash : faMicrophone}
+                style={{
+                  fontSize: isMobile ? "38px" : "48px",
+                  color: "#fff",
+                  zIndex: 2,
+                }}
+              />
+            </div>
+
+            {/* Recording Timer */}
+            {recording && (
+              <div
+                style={{
+                  marginTop: "12px",
+                  fontSize: isMobile ? "18px" : "20px",
+                  color: recordingTime < MINIMUM_RECORDING_TIME ? "#F87171" : "#60A5FA",
+                  fontWeight: "600",
+                  fontFamily: "monospace",
+                  letterSpacing: "1px",
+                  animation: recordingTime < MINIMUM_RECORDING_TIME ? "pulse 1s infinite" : "none",
+                }}
+              >
+                {formatTime(recordingTime)}
+              </div>
+            )}
+
+            <div
+              style={{
+                marginTop: "8px",
+                fontSize: isMobile ? "14px" : "16px",
+                color: "#e2e8f0",
+                fontWeight: "500",
+                textAlign: "center",
+              }}
+            >
+              {recording
+                ? (recordingTime < MINIMUM_RECORDING_TIME
+                   ? `Recording... (${MINIMUM_RECORDING_TIME - recordingTime}s)`
+                   : "Tap to Stop")
+                : isProcessing
+                  ? "Processing..."
+                  : "Tap to Record"}
+            </div>
+          </div>
+          
+          {/* Text Input - Separate from mic but below it for both mobile and desktop */}
+          <div
+            style={{
+              position: "fixed",
+              bottom: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: isMobile ? "90%" : "60%",
+              maxWidth: "800px",
+              display: "flex",
+              alignItems: "center",
+              zIndex: 200,
+              padding: isMobile ? "12px" : "15px 20px",
+              borderRadius: isMobile ? "50px" : "16px",
+              backgroundColor: "rgba(31, 41, 55, 0.8)",
+              backdropFilter: "blur(8px)",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <input
+              type="text"
+              value={textInput}
+              onChange={handleTextInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message here..."
+              disabled={recording || isUploading || isProcessing}
+              style={{
+                flex: 1,
+                padding: isMobile ? "12px 16px" : "16px 20px",
+                height: isMobile ? "auto" : "50px",
+                borderRadius: isMobile ? "24px" : "12px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                backgroundColor: "rgba(17, 24, 39, 0.7)",
+                color: "#f3f4f6",
+                fontSize: isMobile ? "15px" : "16px",
+                outline: "none",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                marginRight: "10px",
+                transition: "all 0.3s ease",
+                "&:focus": {
+                  borderColor: "#3B82F6",
+                  boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.3)"
+                }
+              }}
+            />
+            <button
+              onClick={handleTextSubmit}
+              disabled={textInput.trim() === "" || isUploading || isProcessing}
+              style={{
+                padding: isMobile ? "12px 20px" : "16px 28px",
+                height: isMobile ? "auto" : "50px",
+                borderRadius: isMobile ? "24px" : "12px",
+                backgroundColor: textInput.trim() === "" || isUploading || isProcessing ? 
+                  "rgba(59, 130, 246, 0.3)" : 
+                  "linear-gradient(135deg, #3B82F6, #2563EB)",
+                color: "#ffffff",
+                border: "none",
+                fontSize: isMobile ? "15px" : "16px",
+                fontWeight: "500",
+                cursor: textInput.trim() === "" || isUploading || isProcessing ? 
+                  "not-allowed" : "pointer",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                transition: "all 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isMobile ? "Go" : "Send"}
+            </button>
+          </div>
         </div>
       </div>
 

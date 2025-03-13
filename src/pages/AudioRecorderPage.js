@@ -363,12 +363,11 @@ function AudioRecorderPage() {
             setPollingIntervalId(null);
           }
           
-          // Add the new message to the current chat
+          // Add the new message to the current chat if it's completed and not already added
           if (data.transcribed_text && data.final_answer) {
-            // Check if this message is already in the current chat messages to avoid duplicates
+            // More robust check for duplicate messages using order_id
             const messageExists = currentChatMessages.some(msg => 
-              msg.transcribed_text === data.transcribed_text && 
-              msg.final_answer === data.final_answer
+              msg.order_id === order_id
             );
             
             if (!messageExists) {
@@ -376,6 +375,7 @@ function AudioRecorderPage() {
                 ...prev, 
                 {
                   id: Date.now(), // Temporary ID for UI purposes
+                  order_id: order_id, // Store order_id to prevent duplicates
                   transcribed_text: data.transcribed_text,
                   final_answer: data.final_answer,
                   timestamp: new Date().toISOString()
@@ -560,8 +560,9 @@ function AudioRecorderPage() {
     );
   };
 
+  // New function to get first line of transcribed text instead of final answer
   const getFirstLine = (text) => {
-    if (!text) return "No final answer found.";
+    if (!text) return "No transcription found.";
     return text.split(/\r?\n/)[0].trim();
   };
 
@@ -746,7 +747,8 @@ function AudioRecorderPage() {
             {historyData && historyData.length > 0 ? (
               <>
                 {historyData.map((item) => {
-                  const firstLine = getFirstLine(item.final_answer);
+                  // Use transcribed_text instead of final_answer for the first line
+                  const firstLine = getFirstLine(item.transcribed_text);
                   const isSelected = selectedHistoryItem && 
                     (selectedHistoryItem.id === item.id || 
                      (selectedHistoryItem.isConversationThread && selectedHistoryItem.thread[0].id === item.id));
@@ -1440,7 +1442,7 @@ function AudioRecorderPage() {
                       fontSize: isMobile ? "17px" : "19px",
                       fontWeight: "600",
                       letterSpacing: "0.3px"
-                    }}>Transcribed Text</h3>
+                    }}>User</h3>
                   </div>
 
                   {selectedHistoryItem.transcribed_text ? (

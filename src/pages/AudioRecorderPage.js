@@ -1141,20 +1141,10 @@ function AudioRecorderPage() {
                 lineHeight: "1.7",
                 marginBottom: "16px",
               }}>
-                Tap the microphone button below and describe the patient's condition in detail.
-                Include relevant symptoms, medical history, and any specific questions you have.
+                Tap the microphone below to transcribe your conversation with your client and/or describe the patient's condition in detail.
+                Include relevant symptoms, medical history, and any specific questions you might have.
               </p>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "10px 16px",
-                backgroundColor: "rgba(31, 41, 55, 0.5)",
-                borderRadius: "8px",
-                marginTop: "8px",
-              }}>
-                <FontAwesomeIcon icon={faChevronDown} style={{ color: "#60A5FA", marginRight: "12px" }} />
-                <span style={{ color: "#9CA3AF", fontSize: "12px" }}>Tap the microphone button below to start recording</span>
-              </div>
+
             </div>
           )}
           

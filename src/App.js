@@ -18,6 +18,8 @@ import ProVersionPage from "./pages/ProVersionPage";
 import SuccessPage from "./pages/subscription/SuccessPage";
 import CancelPage from "./pages/subscription/CancelPage";
 import SettingsPage from "./pages/SettingsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 
 function App() {
   useEffect(() => {
@@ -67,6 +69,8 @@ function App() {
         <Route path="/subscription/success" element={<SuccessPage />} />
         <Route path="/subscription/cancel" element={<CancelPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       </Routes>
     </Router>
   );

@@ -385,23 +385,27 @@ function AudioRecorderPage() {
           
           // Add the new message to the current chat if it's completed and not already added
           if (data.transcribed_text && data.final_answer) {
-            // More robust check for duplicate messages using order_id
-            const messageExists = currentChatMessages.some(msg => 
-              msg.order_id === order_id
-            );
-            
-            if (!messageExists) {
-              setCurrentChatMessages(prev => [
+            // Use a function to check if we've already added this message
+            setCurrentChatMessages(prev => {
+              // Check if this order_id already exists in the messages
+              const alreadyExists = prev.some(msg => msg.order_id === order_id);
+              if (alreadyExists) return prev; // Don't add duplicates
+              
+              // Append the new message to the end of the array
+              return [
                 ...prev, 
                 {
                   id: Date.now(), // Temporary ID for UI purposes
-                  order_id: order_id, // Store order_id to prevent duplicates
+                  order_id: order_id,
                   transcribed_text: data.transcribed_text,
                   final_answer: data.final_answer,
                   timestamp: new Date().toISOString()
                 }
-              ]);
-            }
+              ];
+            });
+            
+            // Clear selectedHistoryItem so we only show currentChatMessages
+            setSelectedHistoryItem(null);
           }
         }
       } else {
@@ -559,6 +563,9 @@ function AudioRecorderPage() {
   // 10) Handling history selection
   // ---------------------------
   const handleHistoryItemClick = (item) => {
+    // Initialize an array to hold the new current chat messages
+    let initialChatMessages = [];
+
     // Check if this is a main conversation or a follow-up message
     if (item.messages && item.messages.length > 0) {
       // This is a main conversation with follow-ups
@@ -594,6 +601,26 @@ function AudioRecorderPage() {
       setPreviousOrderId(latestMessageId);
       setIsNewChat(false); // Set to false since we're continuing an existing conversation
       console.log("Setting previousOrderId to latest in thread:", latestMessageId);
+      
+      // Initialize currentChatMessages with all messages from the thread
+      initialChatMessages = [
+        // Start with the main message
+        {
+          id: item.id,
+          order_id: item.id,
+          transcribed_text: item.transcribed_text,
+          final_answer: item.final_answer,
+          timestamp: item.created_at
+        },
+        // Then add all follow-up messages in order
+        ...item.messages.map(msg => ({
+          id: msg.id,
+          order_id: msg.id,
+          transcribed_text: msg.transcribed_text,
+          final_answer: msg.final_answer,
+          timestamp: msg.created_at
+        }))
+      ];
     } else {
       // This is either a single message or a follow-up message selected directly
       setSelectedHistoryItem(item);
@@ -602,7 +629,19 @@ function AudioRecorderPage() {
       setPreviousOrderId(item.id);
       setIsNewChat(false); // Set to false since we're continuing an existing conversation
       console.log("Setting previousOrderId to selected item:", item.id);
+      
+      // Initialize currentChatMessages with just this message
+      initialChatMessages = [{
+        id: item.id,
+        order_id: item.id,
+        transcribed_text: item.transcribed_text,
+        final_answer: item.final_answer,
+        timestamp: item.created_at
+      }];
     }
+    
+    // Set the current chat messages to our initialized array
+    setCurrentChatMessages(initialChatMessages);
     
     // On mobile, close the history panel after selection
     if (isMobile) {
@@ -1375,7 +1414,7 @@ function AudioRecorderPage() {
             </div>
           )}
 
-          {/* Current Chat Messages */}
+          {/* Current Chat Messages - Show whenever we have messages */}
           {currentChatMessages.length > 0 && (
             <div
               style={{
@@ -1483,8 +1522,8 @@ function AudioRecorderPage() {
             </div>
           )}
 
-          {/* Show either a selected history item or newly recorded result */}
-          {selectedHistoryItem && (
+          {/* Only show selectedHistoryItem if we're in a new chat and there are no current messages */}
+          {selectedHistoryItem && currentChatMessages.length === 0 && (
             <div
               style={{
                 marginTop: "25px",
@@ -2469,6 +2508,12 @@ function AudioRecorderPage() {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
+          }
+
+          /* Spinner animation */
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
 
           /* Smooth transition for all interactive elements */

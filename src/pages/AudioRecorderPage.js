@@ -228,6 +228,7 @@ function AudioRecorderPage() {
       setTimerInterval(null);
     }
 
+    // Set the onstop handler BEFORE calling stop
     mediaRecorder.onstop = () => {
       const audioData = new Blob(chunksRef.current, { type: "audio/wav" });
       chunksRef.current = [];

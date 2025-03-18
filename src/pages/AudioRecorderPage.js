@@ -18,7 +18,10 @@ import {
   faChevronDown,
   faCrown,
   faCheck,
-  faTimes
+  faTimes,
+  faPaperclip, // Added paperclip icon for attachment
+  faVial,      // Added vial icon for blood analysis
+  faFlask      // Added flask icon for urine analysis
 } from "@fortawesome/free-solid-svg-icons";
 
 function AudioRecorderPage() {
@@ -89,6 +92,13 @@ function AudioRecorderPage() {
 
   // Remaining free uses counter
   const [remainingFreeUses, setRemainingFreeUses] = useState(null);
+
+  // Image analysis states
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageType, setSelectedImageType] = useState("blood"); // Default to blood
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
 
   // ---------------------------
   // Check viewport size for responsive design
@@ -772,6 +782,124 @@ function AudioRecorderPage() {
         setShowProPopup(false);
       }, 5000);
     }
+  };
+
+  // ---------------------------
+  // New functions for image analysis
+  // ---------------------------
+  // Handle attachment button click
+  const handleAttachmentClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle image file selection
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+      
+      // Check file size (limit to 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Image size should be less than 10MB.');
+        return;
+      }
+      
+      setSelectedImage(file);
+      setShowImageModal(true);
+    }
+  };
+
+  // Handle image type selection
+  const handleImageTypeSelect = (type) => {
+    setSelectedImageType(type);
+  };
+
+  // Handle image upload and analysis
+  const handleImageUpload = async () => {
+    if (!selectedImage) return;
+    
+    try {
+      setIsUploadingImage(true);
+      setShowImageModal(false);
+      setIsProcessing(true);
+      
+      const formData = new FormData();
+      formData.append("image_file", selectedImage);
+      formData.append("image_type", selectedImageType);
+      
+      // Add query parameters for chat continuity
+      formData.append("is_new_chat", isNewChat);
+      if (!isNewChat && previousOrderId) {
+        formData.append("previous_order_id", previousOrderId);
+        console.log("Continuing conversation with previous_order_id:", previousOrderId);
+      } else {
+        console.log("Starting new conversation with image");
+      }
+      
+      // Add optional parameters (empty for now, could be added in future)
+      formData.append("animal_species", "");
+      formData.append("animal_age", "");
+      formData.append("clinical_notes", "");
+      
+      const accessToken = Cookies.get("accessToken");
+      if (!accessToken) {
+        alert("No access token found, please log in again.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(
+        "https://clinicalpaws.com/api/signup/image_analysis",
+        {
+          method: "POST",
+          headers: {
+            token: accessToken,
+            accept: "application/json",
+          },
+          body: formData,
+        }
+      );
+
+      const resData = await response.json();
+      if (!response.ok) {
+        throw new Error(resData.detail || "Image analysis failed");
+      }
+
+      // If we get an order_id, start polling for order details
+      if (resData.order_id) {
+        setOrderId(resData.order_id);
+        
+        // Always update previousOrderId to the latest order_id
+        setPreviousOrderId(resData.order_id);
+        console.log("Setting previousOrderId to:", resData.order_id);
+        
+        // After first message, subsequent messages are part of the same chat
+        if (isNewChat) {
+          setIsNewChat(false);
+          console.log("Setting isNewChat to false for subsequent messages");
+        }
+      }
+      
+    } catch (err) {
+      console.error("Image analysis error:", err);
+      alert("Error analyzing image: " + err.message);
+      setIsProcessing(false);
+    } finally {
+      setIsUploadingImage(false);
+      setSelectedImage(null);
+    }
+  };
+
+  // Close image modal
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setSelectedImage(null);
   };
 
   // ---------------------------
@@ -1940,6 +2068,41 @@ function AudioRecorderPage() {
                 border: "1px solid rgba(255,255,255,0.1)",
               }}
             >
+              {/* Attachment Button */}
+              <button
+                onClick={handleAttachmentClick}
+                disabled={recording || isUploading}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#60A5FA",
+                  fontSize: "22px",
+                  cursor: (recording || isUploading) ? "not-allowed" : "pointer",
+                  marginRight: "8px",
+                  padding: "8px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s ease",
+                  opacity: (recording || isUploading) ? 0.5 : 1,
+                  "&:hover": {
+                    backgroundColor: "rgba(59, 130, 246, 0.1)"
+                  }
+                }}
+              >
+                <FontAwesomeIcon icon={faPaperclip} />
+              </button>
+              
+              {/* Hidden file input for image selection */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept="image/*"
+                style={{ display: "none" }}
+              />
+              
               <input
                 type="text"
                 value={textInput}
@@ -1993,6 +2156,295 @@ function AudioRecorderPage() {
           )}
         </div>
       </div>
+
+      {/* Image Analysis Modal */}
+      {showImageModal && (
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            zIndex: 1000,
+            backdropFilter: "blur(8px)",
+            animation: "fadeIn 0.3s ease-out",
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: "#1f2937",
+              borderRadius: "16px",
+              padding: "30px",
+              maxWidth: isMobile ? "90%" : "500px",
+              width: "100%",
+              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+              position: "relative",
+              overflow: "hidden",
+              animation: "scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={closeImageModal}
+              style={{
+                position: "absolute",
+                top: "15px",
+                right: "15px",
+                background: "none",
+                border: "none",
+                color: "#9CA3AF",
+                fontSize: "20px",
+                cursor: "pointer",
+                zIndex: 10,
+              }}
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            
+            <h2 
+              style={{
+                textAlign: "center",
+                color: "#60A5FA",
+                fontSize: "24px",
+                fontWeight: "700",
+                margin: "0 0 20px 0",
+                animation: "slideUp 0.5s ease-out",
+              }}
+            >
+              Medical Report Analysis
+            </h2>
+            
+            {/* Warning notice */}
+            <div style={{
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              marginBottom: "20px",
+              border: "1px solid rgba(59, 130, 246, 0.3)",
+            }}>
+              <p style={{
+                color: "#60A5FA",
+                fontSize: "14px",
+                margin: 0,
+                textAlign: "center",
+                fontWeight: "500",
+              }}>
+                Please upload only medical report images for accurate analysis
+              </p>
+            </div>
+            
+            {selectedImage && (
+              <div style={{
+                marginBottom: "20px",
+                textAlign: "center"
+              }}>
+                <img 
+                  src={URL.createObjectURL(selectedImage)} 
+                  alt="Selected for analysis" 
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "200px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
+                />
+                <p style={{
+                  fontSize: "14px",
+                  color: "#9CA3AF",
+                  marginTop: "8px"
+                }}>
+                  {selectedImage.name} ({Math.round(selectedImage.size / 1024)} KB)
+                </p>
+              </div>
+            )}
+            
+            <div style={{
+              backgroundColor: "rgba(31, 41, 55, 0.4)",
+              borderRadius: "12px",
+              padding: "16px",
+              marginBottom: "25px",
+              border: "1px solid rgba(255,255,255,0.05)",
+            }}>
+              <h3 style={{
+                color: "#e2e8f0",
+                fontSize: "18px",
+                textAlign: "center",
+                margin: "0 0 15px 0",
+                fontWeight: "600"
+              }}>
+                What type of report are you analyzing?
+              </h3>
+              
+              {/* Analysis Type Selection */}
+              <div style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "20px",
+                marginBottom: "10px"
+              }}>
+                <button
+                  onClick={() => handleImageTypeSelect("blood")}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    padding: "20px 15px",
+                    borderRadius: "12px",
+                    border: selectedImageType === "blood" 
+                      ? "2px solid #60A5FA" 
+                      : "1px solid rgba(255,255,255,0.1)",
+                    backgroundColor: selectedImageType === "blood"
+                      ? "rgba(59, 130, 246, 0.15)"
+                      : "rgba(31, 41, 55, 0.6)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    flex: 1,
+                    boxShadow: selectedImageType === "blood" ? "0 0 15px rgba(59, 130, 246, 0.3)" : "none",
+                  }}
+                >
+                  <div style={{
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(220, 38, 38, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "12px",
+                    color: "#ef4444", // Red color for blood
+                    fontSize: "28px",
+                    border: "1px solid rgba(220, 38, 38, 0.2)",
+                  }}>
+                    <FontAwesomeIcon icon={faVial} />
+                  </div>
+                  <span style={{
+                    color: selectedImageType === "blood" ? "#60A5FA" : "#e2e8f0",
+                    fontWeight: selectedImageType === "blood" ? "600" : "400",
+                    fontSize: "16px",
+                  }}>
+                    Blood Report
+                  </span>
+                  {selectedImageType === "blood" && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginTop: "8px",
+                      color: "#60A5FA",
+                      fontWeight: "500",
+                      fontSize: "14px",
+                    }}>
+                      <FontAwesomeIcon icon={faCheck} style={{ marginRight: "6px" }} />
+                      Selected
+                    </div>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => handleImageTypeSelect("urine")}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    padding: "20px 15px",
+                    borderRadius: "12px",
+                    border: selectedImageType === "urine" 
+                      ? "2px solid #60A5FA" 
+                      : "1px solid rgba(255,255,255,0.1)",
+                    backgroundColor: selectedImageType === "urine"
+                      ? "rgba(59, 130, 246, 0.15)"
+                      : "rgba(31, 41, 55, 0.6)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    flex: 1,
+                    boxShadow: selectedImageType === "urine" ? "0 0 15px rgba(59, 130, 246, 0.3)" : "none",
+                  }}
+                >
+                  <div style={{
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(245, 158, 11, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "12px",
+                    color: "#f59e0b", // Amber color for urine
+                    fontSize: "28px",
+                    border: "1px solid rgba(245, 158, 11, 0.2)",
+                  }}>
+                    <FontAwesomeIcon icon={faFlask} />
+                  </div>
+                  <span style={{
+                    color: selectedImageType === "urine" ? "#60A5FA" : "#e2e8f0",
+                    fontWeight: selectedImageType === "urine" ? "600" : "400",
+                    fontSize: "16px",
+                  }}>
+                    Urine Report
+                  </span>
+                  {selectedImageType === "urine" && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginTop: "8px",
+                      color: "#60A5FA",
+                      fontWeight: "500",
+                      fontSize: "14px",
+                    }}>
+                      <FontAwesomeIcon icon={faCheck} style={{ marginRight: "6px" }} />
+                      Selected
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            {/* Analysis Button */}
+            <button
+              onClick={handleImageUpload}
+              disabled={!selectedImage || isUploadingImage}
+              style={{
+                width: "100%",
+                padding: "16px 0",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+                color: "#ffffff",
+                border: "none",
+                cursor: !selectedImage || isUploadingImage ? "not-allowed" : "pointer",
+                fontSize: "16px",
+                fontWeight: "600",
+                marginTop: "15px",
+                boxShadow: "0 4px 6px rgba(59, 130, 246, 0.25)",
+                opacity: !selectedImage || isUploadingImage ? 0.7 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+              }}
+            >
+              {isUploadingImage ? (
+                <>
+                  <div className="spinner" style={{
+                    width: "20px",
+                    height: "20px",
+                    border: "2px solid rgba(255,255,255,0.2)",
+                    borderRadius: "50%",
+                    borderTop: "2px solid #fff",
+                    animation: "spin 1s linear infinite",
+                  }}></div>
+                  Uploading...
+                </>
+              ) : (
+                `Analyze ${selectedImageType === "blood" ? "Blood" : "Urine"} Report`
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Pro User Popup */}
       {showProPopup && (
